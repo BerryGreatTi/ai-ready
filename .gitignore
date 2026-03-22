@@ -1,0 +1,15 @@
+# Development scratch files
+.dev/tmp/
+!.dev/tmp/.gitkeep
+
+# Superpowers artifacts
+.dev/superpowers/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+release/
+dist/
+build/
