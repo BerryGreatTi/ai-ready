@@ -13,3 +13,12 @@ Thumbs.db
 release/
 dist/
 build/
+
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
