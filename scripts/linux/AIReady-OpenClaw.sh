@@ -134,7 +134,8 @@ else
     fi
     if ! command -v openclaw &>/dev/null; then
         npm install -g openclaw@latest
-        export PATH="$(npm root -g)/.bin:$PATH"
+        npm_bin="$(npm root -g)/.bin"
+        export PATH="${npm_bin}:$PATH"
     fi
     if command -v openclaw &>/dev/null; then
         step_ok "OpenClaw installed"
