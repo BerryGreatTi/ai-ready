@@ -12,7 +12,10 @@ Thumbs.db
 # Build outputs
 release/
 dist/
-build/
+# Note: build/ contains source files (PyInstaller specs, entry points) and is tracked.
+# Exclude only PyInstaller work directories under build/:
+build/__pycache__/
+build/*.pyc
 
 # Python virtual environment
 .venv/
