@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIReady - Install AI Tools in One Click</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo">
+        <span class="logo-text">AIReady</span>
+      </div>
+      <div class="header-actions">
+        <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
+          <span id="langLabel">KO</span>
+        </button>
+        <a class="github-link" href="https://github.com/YOUR_USER/install-ai" target="_blank" rel="noopener noreferrer">
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1 class="hero-title" id="heroTitle">Install AI developer tools with one click</h1>
+        <p class="hero-subtitle" id="heroSubtitle">
+          AIReady sets up Claude Code and OpenClaw on your machine automatically.
+          No terminal knowledge required.
+        </p>
+        <div class="detected-os">
+          <span class="os-label" id="osLabelText">Detected OS:</span>
+          <span class="os-badge" id="osBadge">Detecting...</span>
+          <select class="os-override" id="osOverride" aria-label="Override detected OS">
+            <option value="windows">Windows</option>
+            <option value="macos">macOS</option>
+            <option value="linux">Linux</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="download-section">
+      <div class="container">
+        <div class="tab-bar" role="tablist">
+          <button class="tab active" id="tabGui" role="tab" aria-selected="true"
+                  aria-controls="panelGui" data-tab="gui">
+            <span id="tabGuiLabel">GUI Installer</span>
+          </button>
+          <button class="tab" id="tabScript" role="tab" aria-selected="false"
+                  aria-controls="panelScript" data-tab="script">
+            <span id="tabScriptLabel">Script</span>
+          </button>
+        </div>
+
+        <!-- GUI Panel -->
+        <div class="tab-panel active" id="panelGui" role="tabpanel" aria-labelledby="tabGui">
+          <p class="panel-note" id="guiNote">Download the GUI installer for your operating system.</p>
+
+          <div class="linux-gui-notice hidden" id="linuxGuiNotice">
+            <p id="linuxGuiMsg">GUI installers are available for Windows and macOS only. Linux users please use the Script tab.</p>
+          </div>
+
+          <div class="card-grid" id="guiCards">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Claude Code</h2>
+                <span class="card-tag" id="ccGuiTag">GUI</span>
+              </div>
+              <p class="card-desc" id="ccGuiDesc">
+                Install Claude Code with a graphical step-by-step setup wizard.
+              </p>
+              <div class="card-actions">
+                <a class="btn btn-primary" id="ccGuiBtn" href="#" target="_blank" rel="noopener noreferrer">
+                  <span id="ccGuiBtnLabel">Download</span>
+                </a>
+                <span class="version-label" id="ccGuiVersion">latest</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">OpenClaw</h2>
+                <span class="card-tag" id="ocGuiTag">GUI</span>
+              </div>
+              <p class="card-desc" id="ocGuiDesc">
+                Install OpenClaw with a graphical step-by-step setup wizard.
+              </p>
+              <div class="card-actions">
+                <a class="btn btn-primary" id="ocGuiBtn" href="#" target="_blank" rel="noopener noreferrer">
+                  <span id="ocGuiBtnLabel">Download</span>
+                </a>
+                <span class="version-label" id="ocGuiVersion">latest</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Script Panel -->
+        <div class="tab-panel" id="panelScript" role="tabpanel" aria-labelledby="tabScript">
+          <p class="panel-note" id="scriptNote">Run the installer script directly from your terminal.</p>
+
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Claude Code</h2>
+                <span class="card-tag" id="ccScriptTag">Script</span>
+              </div>
+              <p class="card-desc" id="ccScriptDesc">
+                Install Claude Code via a shell script. Supports Windows (PowerShell/Batch) and macOS/Linux (Bash).
+              </p>
+              <div class="card-actions">
+                <a class="btn btn-primary" id="ccScriptBtn" href="#" target="_blank" rel="noopener noreferrer">
+                  <span id="ccScriptBtnLabel">Download Script</span>
+                </a>
+                <span class="version-label" id="ccScriptVersion">latest</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">OpenClaw</h2>
+                <span class="card-tag" id="ocScriptTag">Script</span>
+              </div>
+              <p class="card-desc" id="ocScriptDesc">
+                Install OpenClaw via a shell script. Supports Windows (PowerShell/Batch) and macOS/Linux (Bash).
+              </p>
+              <div class="card-actions">
+                <a class="btn btn-primary" id="ocScriptBtn" href="#" target="_blank" rel="noopener noreferrer">
+                  <span id="ocScriptBtnLabel">Download Script</span>
+                </a>
+                <span class="version-label" id="ocScriptVersion">latest</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- macOS Gatekeeper section -->
+    <section class="macos-note hidden" id="macosNote">
+      <div class="container">
+        <details class="collapsible">
+          <summary class="collapsible-summary" id="gkSummary">
+            macOS: Gatekeeper bypass instructions
+          </summary>
+          <div class="collapsible-body">
+            <p id="gkIntro">
+              Because AIReady is distributed outside the Mac App Store, macOS Gatekeeper
+              may block it from running. Follow these steps to allow it:
+            </p>
+            <ol class="steps-list">
+              <li>Open <strong>System Settings</strong> (or <em>System Preferences</em> on older macOS).</li>
+              <li>Go to <strong>Privacy &amp; Security</strong>.</li>
+              <li>Scroll to the Security section and click <strong>Open Anyway</strong> next to the AIReady message.</li>
+              <li>Alternatively, right-click the app in Finder and choose <strong>Open</strong>, then confirm.</li>
+            </ol>
+            <p id="gkAlt">Or run this command in Terminal after downloading:</p>
+            <pre class="code-block">xattr -d com.apple.quarantine /path/to/AIReady-ClaudeCode-Mac.app</pre>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Checksum section -->
+    <section class="checksum-section">
+      <div class="container">
+        <details class="collapsible">
+          <summary class="collapsible-summary" id="checksumSummary">
+            Verify checksums
+          </summary>
+          <div class="collapsible-body">
+            <p id="checksumIntro">
+              SHA-256 checksums are published with each release to verify file integrity.
+            </p>
+            <a class="btn btn-secondary" id="checksumLink"
+               href="https://github.com/YOUR_USER/install-ai/releases/latest/download/CHECKSUMS.txt"
+               target="_blank" rel="noopener noreferrer">
+              <span id="checksumBtnLabel">Download CHECKSUMS.txt</span>
+            </a>
+            <div class="checksum-display">
+              <p class="checksum-hint" id="checksumHint">
+                Verify with: <code>sha256sum -c CHECKSUMS.txt</code> (Linux/macOS)
+                or <code>Get-FileHash</code> in PowerShell.
+              </p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>
+        <span id="footerText">AIReady is open source.</span>
+        <a href="https://github.com/YOUR_USER/install-ai" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // Translations (static strings only - no untrusted input)
+    // -----------------------------------------------------------------------
+    var TRANSLATIONS = {
+      en: {
+        heroTitle: "Install AI developer tools with one click",
+        heroSubtitle: "AIReady sets up Claude Code and OpenClaw on your machine automatically. No terminal knowledge required.",
+        osLabelText: "Detected OS:",
+        tabGuiLabel: "GUI Installer",
+        tabScriptLabel: "Script",
+        guiNote: "Download the GUI installer for your operating system.",
+        linuxGuiMsg: "GUI installers are available for Windows and macOS only. Linux users please use the Script tab.",
+        ccGuiTag: "GUI",
+        ccGuiDesc: "Install Claude Code with a graphical step-by-step setup wizard.",
+        ccGuiBtnLabel: "Download",
+        ocGuiTag: "GUI",
+        ocGuiDesc: "Install OpenClaw with a graphical step-by-step setup wizard.",
+        ocGuiBtnLabel: "Download",
+        ccScriptTag: "Script",
+        ccScriptDesc: "Install Claude Code via a shell script. Supports Windows (PowerShell/Batch) and macOS/Linux (Bash).",
+        ccScriptBtnLabel: "Download Script",
+        ocScriptTag: "Script",
+        ocScriptDesc: "Install OpenClaw via a shell script. Supports Windows (PowerShell/Batch) and macOS/Linux (Bash).",
+        ocScriptBtnLabel: "Download Script",
+        gkSummary: "macOS: Gatekeeper bypass instructions",
+        gkIntro: "Because AIReady is distributed outside the Mac App Store, macOS Gatekeeper may block it from running. Follow these steps to allow it:",
+        gkAlt: "Or run this command in Terminal after downloading:",
+        checksumSummary: "Verify checksums",
+        checksumIntro: "SHA-256 checksums are published with each release to verify file integrity.",
+        checksumBtnLabel: "Download CHECKSUMS.txt",
+        footerText: "AIReady is open source."
+      },
+      ko: {
+        heroTitle: "AI \uAC1C\uBC1C \uB3C4\uAD6C\uB97C \ud55c \uBC88\uC758 \uD074\uB9AD\uC73C\uB85C \uC124\uCE58\uD558\uC138\uC694",
+        heroSubtitle: "AIReady\uB294 Claude Code\uC640 OpenClaw\uB97C \uC790\uB3D9\uC73C\uB85C \uC124\uCE58\uD569\uB2C8\uB2E4. \uD130\uBBF8\uB110 \uC9C0\uC2DD\uC774 \uD544\uC694 \uC5C6\uC2B5\uB2C8\uB2E4.",
+        osLabelText: "\uAC10\uC9C0\uB41C OS:",
+        tabGuiLabel: "GUI \uC124\uCE58 \uD504\uB85C\uADF8\uB7A8",
+        tabScriptLabel: "\uC2A4\uD06C\uB9BD\uD2B8",
+        guiNote: "\uC6B4\uC601 \uCCB4\uC81C\uC5D0 \uB9DE\uB294 GUI \uC124\uCE58 \uD504\uB85C\uADF8\uB7A8\uC744 \uB2E4\uC6B4\uB85C\uB4DC\uD558\uC138\uC694.",
+        linuxGuiMsg: "GUI \uC124\uCE58 \uD504\uB85C\uADF8\uB7A8\uC740 Windows\uC640 macOS\uC5D0\uC11C\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. Linux \uC0AC\uC6A9\uC790\uB294 \uC2A4\uD06C\uB9BD\uD2B8 \uD0ED\uC744 \uC774\uC6A9\uD558\uC138\uC694.",
+        ccGuiTag: "GUI",
+        ccGuiDesc: "\uB2E8\uACC4\uBCC4 \uC124\uCE58 \uB9C8\uBC95\uC0AC\uB85C Claude Code\uB97C \uC124\uCE58\uD569\uB2C8\uB2E4.",
+        ccGuiBtnLabel: "\uB2E4\uC6B4\uB85C\uB4DC",
+        ocGuiTag: "GUI",
+        ocGuiDesc: "\uB2E8\uACC4\uBCC4 \uC124\uCE58 \uB9C8\uBC95\uC0AC\uB85C OpenClaw\uB97C \uC124\uCE58\uD569\uB2C8\uB2E4.",
+        ocGuiBtnLabel: "\uB2E4\uC6B4\uB85C\uB4DC",
+        ccScriptTag: "\uC2A4\uD06C\uB9BD\uD2B8",
+        ccScriptDesc: "\uC178 \uC2A4\uD06C\uB9BD\uD2B8\uB85C Claude Code\uB97C \uC124\uCE58\uD569\uB2C8\uB2E4. Windows(PowerShell/Batch) \uBC0F macOS/Linux(Bash)\uB97C \uC9C0\uC6D0\uD569\uB2C8\uB2E4.",
+        ccScriptBtnLabel: "\uC2A4\uD06C\uB9BD\uD2B8 \uB2E4\uC6B4\uB85C\uB4DC",
+        ocScriptTag: "\uC2A4\uD06C\uB9BD\uD2B8",
+        ocScriptDesc: "\uC178 \uC2A4\uD06C\uB9BD\uD2B8\uB85C OpenClaw\uB97C \uC124\uCE58\uD569\uB2C8\uB2E4. Windows(PowerShell/Batch) \uBC0F macOS/Linux(Bash)\uB97C \uC9C0\uC6D0\uD569\uB2C8\uB2E4.",
+        ocScriptBtnLabel: "\uC2A4\uD06C\uB9BD\uD2B8 \uB2E4\uC6B4\uB85C\uB4DC",
+        gkSummary: "macOS: \uAC8C\uC774\uD2B8\uD0A4\uD37C \uC6B0\uD68C \uC548\uB0B4",
+        gkIntro: "AIReady\uB294 Mac App Store \uC678\uBD80\uC5D0\uC11C \uBC30\uD3EC\uB418\uBBC0\uB85C macOS \uAC8C\uC774\uD2B8\uD0A4\uD37C\uAC00 \uC2E4\uD589\uC744 \uCC28\uB2E8\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC544\uB798 \uB2E8\uACC4\uB97C \uB530\uB974\uC138\uC694:",
+        gkAlt: "\uB610\uB294 \uB2E4\uC6B4\uB85C\uB4DC \uD6C4 \uD130\uBBF8\uB110\uC5D0\uC11C \uB2E4\uC74C \uBA85\uB839\uC744 \uC2E4\uD589\uD558\uC138\uC694:",
+        checksumSummary: "\uCCB4\uD06C\uC12C \uD655\uC778",
+        checksumIntro: "\uD30C\uC77C \uBB34\uACB0\uC131\uC744 \uD655\uC778\uD558\uAE30 \uC704\uD574 \uAC01 \uB9B4\uB9AC\uC2A4\uC5D0 SHA-256 \uCCB4\uD06C\uC12C\uC774 \uAC8C\uC2DC\uB429\uB2C8\uB2E4.",
+        checksumBtnLabel: "CHECKSUMS.txt \uB2E4\uC6B4\uB85C\uB4DC",
+        footerText: "AIReady\uB294 \uC624\uD508 \uC18C\uC2A4\uC785\uB2C8\uB2E4."
+      }
+    };
+
+    // -----------------------------------------------------------------------
+    // Download URL helpers
+    // -----------------------------------------------------------------------
+    var BASE_URL = "https://github.com/YOUR_USER/install-ai/releases/latest/download";
+
+    var DOWNLOAD_URLS = {
+      gui: {
+        windows: {
+          cc: BASE_URL + "/AIReady-ClaudeCode-Win.exe",
+          oc: BASE_URL + "/AIReady-OpenClaw-Win.exe"
+        },
+        macos: {
+          cc: BASE_URL + "/AIReady-ClaudeCode-Mac.zip",
+          oc: BASE_URL + "/AIReady-OpenClaw-Mac.zip"
+        }
+      },
+      script: {
+        windows: {
+          cc: BASE_URL + "/AIReady-ClaudeCode.ps1",
+          oc: BASE_URL + "/AIReady-OpenClaw.ps1"
+        },
+        macos: {
+          cc: BASE_URL + "/AIReady-ClaudeCode-mac.sh",
+          oc: BASE_URL + "/AIReady-OpenClaw-mac.sh"
+        },
+        linux: {
+          cc: BASE_URL + "/AIReady-ClaudeCode-linux.sh",
+          oc: BASE_URL + "/AIReady-OpenClaw-linux.sh"
+        }
+      }
+    };
+
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    var currentLang = "en";
+    var currentOs = "unknown";
+    var currentTab = "gui";
+
+    // -----------------------------------------------------------------------
+    // OS detection
+    // -----------------------------------------------------------------------
+    function detectOs() {
+      var ua = navigator.userAgent.toLowerCase();
+      if (ua.indexOf("win") !== -1) return "windows";
+      if (ua.indexOf("mac") !== -1) return "macos";
+      if (ua.indexOf("linux") !== -1) return "linux";
+      return "unknown";
+    }
+
+    // -----------------------------------------------------------------------
+    // Translation - uses textContent only (no untrusted input / no innerHTML)
+    // -----------------------------------------------------------------------
+    function applyTranslation(lang) {
+      var t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+      var ids = Object.keys(t);
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        var el = document.getElementById(id);
+        if (el) {
+          el.textContent = t[id];
+        }
+      }
+      document.documentElement.lang = lang;
+    }
+
+    // -----------------------------------------------------------------------
+    // Update download links based on OS and tab
+    // -----------------------------------------------------------------------
+    function updateDownloadLinks(os, tab) {
+      var urls = DOWNLOAD_URLS[tab] && DOWNLOAD_URLS[tab][os];
+
+      var linuxGuiNotice = document.getElementById("linuxGuiNotice");
+      var guiCards = document.getElementById("guiCards");
+
+      if (tab === "gui") {
+        if (os === "linux" || os === "unknown") {
+          linuxGuiNotice.classList.remove("hidden");
+          guiCards.classList.add("hidden");
+        } else {
+          linuxGuiNotice.classList.add("hidden");
+          guiCards.classList.remove("hidden");
+        }
+      }
+
+      if (urls) {
+        var ccGuiBtn = document.getElementById("ccGuiBtn");
+        var ocGuiBtn = document.getElementById("ocGuiBtn");
+        var ccScriptBtn = document.getElementById("ccScriptBtn");
+        var ocScriptBtn = document.getElementById("ocScriptBtn");
+
+        if (tab === "gui") {
+          if (ccGuiBtn) ccGuiBtn.href = urls.cc || "#";
+          if (ocGuiBtn) ocGuiBtn.href = urls.oc || "#";
+        } else {
+          if (ccScriptBtn) ccScriptBtn.href = urls.cc || "#";
+          if (ocScriptBtn) ocScriptBtn.href = urls.oc || "#";
+        }
+      }
+
+      // Show/hide macOS Gatekeeper note
+      var macosNote = document.getElementById("macosNote");
+      if (os === "macos" && tab === "gui") {
+        macosNote.classList.remove("hidden");
+      } else {
+        macosNote.classList.add("hidden");
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Tab switching
+    // -----------------------------------------------------------------------
+    function switchTab(tab) {
+      currentTab = tab;
+      var tabs = document.querySelectorAll(".tab");
+      for (var i = 0; i < tabs.length; i++) {
+        var isActive = tabs[i].dataset.tab === tab;
+        tabs[i].classList.toggle("active", isActive);
+        tabs[i].setAttribute("aria-selected", String(isActive));
+      }
+      var panels = document.querySelectorAll(".tab-panel");
+      var targetId = "panel" + tab.charAt(0).toUpperCase() + tab.slice(1);
+      for (var j = 0; j < panels.length; j++) {
+        panels[j].classList.toggle("active", panels[j].id === targetId);
+      }
+      updateDownloadLinks(currentOs, currentTab);
+    }
+
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    function init() {
+      // Language detection
+      var browserLang = (navigator.language || "en").toLowerCase();
+      currentLang = browserLang.indexOf("ko") === 0 ? "ko" : "en";
+      applyTranslation(currentLang);
+      document.getElementById("langLabel").textContent = currentLang === "ko" ? "EN" : "KO";
+
+      // OS detection
+      currentOs = detectOs();
+      var osNames = { windows: "Windows", macos: "macOS", linux: "Linux", unknown: "Unknown" };
+      document.getElementById("osBadge").textContent = osNames[currentOs] || "Unknown";
+
+      // Sync select
+      var osOverride = document.getElementById("osOverride");
+      osOverride.value = currentOs !== "unknown" ? currentOs : "windows";
+
+      updateDownloadLinks(currentOs, currentTab);
+
+      // Language toggle
+      document.getElementById("langToggle").addEventListener("click", function () {
+        currentLang = currentLang === "en" ? "ko" : "en";
+        document.getElementById("langLabel").textContent = currentLang === "ko" ? "EN" : "KO";
+        applyTranslation(currentLang);
+      });
+
+      // OS override
+      osOverride.addEventListener("change", function () {
+        currentOs = this.value;
+        var osNames = { windows: "Windows", macos: "macOS", linux: "Linux" };
+        document.getElementById("osBadge").textContent = osNames[currentOs] || currentOs;
+        updateDownloadLinks(currentOs, currentTab);
+      });
+
+      // Tab buttons
+      var tabBtns = document.querySelectorAll(".tab");
+      for (var i = 0; i < tabBtns.length; i++) {
+        (function(btn) {
+          btn.addEventListener("click", function () {
+            switchTab(btn.dataset.tab);
+          });
+        })(tabBtns[i]);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
