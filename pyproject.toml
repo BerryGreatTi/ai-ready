@@ -25,6 +25,10 @@ pythonpath = ["src"]
 
 [tool.coverage.run]
 source = ["aiready"]
+omit = [
+    "*/gui/*",
+    "*/main.py",
+]
 
 [tool.coverage.report]
 fail_under = 80
