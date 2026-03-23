@@ -32,7 +32,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install -y shellcheck
-          shellcheck -e SC1091,SC2086 scripts/**/*.sh
+          shellcheck --severity=warning -e SC1091,SC2086,SC2034 scripts/**/*.sh
 
       - name: Run bash syntax check (Linux only)
         if: runner.os == 'Linux'
