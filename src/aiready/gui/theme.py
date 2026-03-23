@@ -1,0 +1,16 @@
+"""Theme constants for AIReady GUI."""
+
+WINDOW_WIDTH = 480
+WINDOW_HEIGHT = 640
+PADDING = 20
+BUTTON_HEIGHT = 40
+CARD_HEIGHT = 100
+FONT_TITLE = ("", 24, "bold")
+FONT_SUBTITLE = ("", 14)
+FONT_BODY = ("", 13)
+FONT_SMALL = ("", 11)
+FONT_CODE = ("Courier", 13)
+COLOR_SUCCESS = "#2ecc71"
+COLOR_ERROR = "#e74c3c"
+COLOR_WARNING = "#f39c12"
+COLOR_RUNNING = "#3498db"
