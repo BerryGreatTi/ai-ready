@@ -38,9 +38,8 @@ class TestAdd:
     def test_add_delegates_to_platform(
         self, manager: PathManager, mock_platform: MagicMock
     ) -> None:
-        new_path = Path("/usr/local/bin")
-        # Ensure this path is NOT in PATH
-        with patch.dict(os.environ, {"PATH": "/usr/bin:/bin"}, clear=False):
+        new_path = Path("some_unique_test_path")
+        with patch.dict(os.environ, {"PATH": f"other_path_a{os.pathsep}other_path_b"}, clear=False):
             result = manager.add(new_path)
 
         mock_platform.add_to_path.assert_called_once_with(new_path)
@@ -49,8 +48,9 @@ class TestAdd:
     def test_add_skips_if_already_in_path(
         self, manager: PathManager, mock_platform: MagicMock
     ) -> None:
-        new_path = Path("/usr/local/bin")
-        path_value = f"/usr/local/bin{os.pathsep}/usr/bin"
+        target = "already_in_path_dir"
+        new_path = Path(target)
+        path_value = f"{target}{os.pathsep}other_path"
         with patch.dict(os.environ, {"PATH": path_value}, clear=False):
             result = manager.add(new_path)
 
