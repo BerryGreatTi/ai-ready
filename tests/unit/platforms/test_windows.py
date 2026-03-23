@@ -397,8 +397,7 @@ class TestGetShellType:
         assert result == ShellType.POWERSHELL
 
     def test_default_cmd_when_no_powershell(self, platform):
-        env = {k: v for k, v in os.environ.items() if k != "PSModulePath"}
-        with patch.dict(os.environ, env, clear=True):
+        with patch.dict(os.environ, {"PSModulePath": ""}, clear=False):
             result = platform.get_shell_type()
 
         assert result == ShellType.CMD

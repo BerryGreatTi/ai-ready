@@ -3,9 +3,12 @@
 Validates all shell and PowerShell scripts in the scripts/ directory
 for correctness, style conventions, and portability requirements.
 """
+import sys
 import subprocess
 import pytest
 from pathlib import Path
+
+skip_on_windows = pytest.mark.skipif(sys.platform == "win32", reason="Shell scripts not testable on Windows")
 
 SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 SH_FILES = list(SCRIPTS_DIR.glob("**/*.sh"))
@@ -15,6 +18,7 @@ PS1_FILES = list(SCRIPTS_DIR.glob("**/*.ps1"))
 class TestShellScripts:
     """Verify shell scripts pass syntax and style checks."""
 
+    @skip_on_windows
     @pytest.mark.parametrize("script", SH_FILES, ids=lambda p: p.name)
     def test_shellcheck(self, script: Path) -> None:
         """Shell scripts should pass shellcheck (SC1091, SC2086 suppressed)."""
@@ -29,6 +33,7 @@ class TestShellScripts:
         if result.returncode != 0:
             pytest.fail(f"shellcheck errors in {script.name}:\n{result.stdout}\n{result.stderr}")
 
+    @skip_on_windows
     @pytest.mark.parametrize("script", SH_FILES, ids=lambda p: p.name)
     def test_bash_syntax(self, script: Path) -> None:
         """Shell scripts must have valid bash syntax."""

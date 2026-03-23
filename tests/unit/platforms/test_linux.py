@@ -3,11 +3,14 @@
 
 from __future__ import annotations
 
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="Linux platform tests not applicable on Windows")
 
 from aiready.core.models import (
     CommandInfo,

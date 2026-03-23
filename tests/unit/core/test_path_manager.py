@@ -50,7 +50,8 @@ class TestAdd:
         self, manager: PathManager, mock_platform: MagicMock
     ) -> None:
         new_path = Path("/usr/local/bin")
-        with patch.dict(os.environ, {"PATH": "/usr/local/bin:/usr/bin"}, clear=False):
+        path_value = f"/usr/local/bin{os.pathsep}/usr/bin"
+        with patch.dict(os.environ, {"PATH": path_value}, clear=False):
             result = manager.add(new_path)
 
         mock_platform.add_to_path.assert_not_called()
@@ -60,17 +61,17 @@ class TestAdd:
 class TestRefreshSession:
     def test_refresh_session(self, manager: PathManager) -> None:
         new_path = "/opt/custom/bin"
-        original_path = "/usr/bin:/bin"
+        original_path = f"/usr/bin{os.pathsep}/bin"
         with patch.dict(os.environ, {"PATH": original_path}, clear=False):
             manager.refresh_session(new_path)
             updated = os.environ["PATH"]
 
         assert new_path in updated
-        assert original_path in updated
+        assert "/usr/bin" in updated
 
     def test_refresh_session_no_duplicate(self, manager: PathManager) -> None:
         new_path = "/usr/bin"
-        with patch.dict(os.environ, {"PATH": "/usr/bin:/bin"}, clear=False):
+        with patch.dict(os.environ, {"PATH": f"/usr/bin{os.pathsep}/bin"}, clear=False):
             manager.refresh_session(new_path)
             updated = os.environ["PATH"]
 

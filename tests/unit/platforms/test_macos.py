@@ -3,10 +3,13 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch, call
 
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="macOS platform tests not applicable on Windows")
 
 from aiready.core.models import (
     CommandInfo,
