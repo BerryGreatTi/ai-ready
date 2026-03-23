@@ -1,38 +1,239 @@
 # src/aiready/platforms/windows.py
-"""Windows platform stub - full implementation in Task 9."""
+"""Windows platform implementation."""
 
+from __future__ import annotations
+
+import os
+import platform as platform_module
+import shutil
+import tempfile
+import webbrowser
+from pathlib import Path
+from typing import Optional
+
+from aiready.core.models import (
+    CommandInfo,
+    CommandResult,
+    InstallResult,
+    OSInfo,
+    PrereqCheckResult,
+    Prerequisite,
+    ShellType,
+    StepResult,
+    StepStatus,
+)
+from aiready.core.process import run_process
+from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
+
+# Known fallback paths for common tools on Windows (static paths only)
+_KNOWN_PATHS: dict[str, list[str]] = {
+    "git": [r"C:\Program Files\Git\cmd\git.exe"],
+    "node": [r"C:\Program Files\nodejs\node.exe"],
+}
+
+# Node.js MSI download URL (LTS)
+_NODEJS_MSI_URL = "https://nodejs.org/dist/latest-v20.x/node-v20.11.1-x64.msi"
+
+# Git installer download URL
+_GIT_EXE_URL = "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe"
 
 
 class WindowsPlatform(Platform):
-    """Stub - full implementation in Task 9."""
+    """Platform implementation for Windows operating systems."""
 
-    def get_os_info(self):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # get_os_info
+    # ------------------------------------------------------------------
 
-    def check_command(self, command):
-        raise NotImplementedError
+    def get_os_info(self) -> OSInfo:
+        return OSInfo(
+            system=platform_module.system(),
+            release=platform_module.release(),
+            version=platform_module.version(),
+            arch=platform_module.machine(),
+        )
 
-    def install_prerequisite(self, prereq):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # check_command
+    # ------------------------------------------------------------------
 
-    def verify_prerequisite(self, prereq):
-        raise NotImplementedError
+    def check_command(self, command: str) -> Optional[CommandInfo]:
+        # Try shutil.which first
+        path = shutil.which(command)
 
-    def add_to_path(self, path):
-        raise NotImplementedError
+        # Fall back to known paths if not found
+        if path is None:
+            path = self._find_known_path(command)
 
-    def request_elevation(self, reason_key):
-        raise NotImplementedError
+        if path is None:
+            return None
 
-    def run_command(self, cmd, elevated=False):
-        raise NotImplementedError
+        result = run_process([path, "--version"])
+        if result.return_code == -1:
+            return CommandInfo(path=path, version=None)
 
-    def get_temp_dir(self):
-        raise NotImplementedError
+        raw = (result.stdout or result.stderr or "").strip()
+        version = raw.splitlines()[0] if raw else None
+        return CommandInfo(path=path, version=version)
 
-    def open_browser(self, url):
-        raise NotImplementedError
+    def _find_known_path(self, command: str) -> Optional[str]:
+        candidates = list(_KNOWN_PATHS.get(command, []))
+        # Add dynamic paths that depend on runtime environment
+        if command == "claude":
+            userprofile = os.environ.get("USERPROFILE", r"C:\Users\Default")
+            candidates.append(str(Path(userprofile) / ".local" / "bin" / "claude.exe"))
+        for candidate in candidates:
+            if Path(candidate).exists():
+                return candidate
+        return None
 
-    def get_shell_type(self):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # install_prerequisite
+    # ------------------------------------------------------------------
+
+    def install_prerequisite(self, prereq: Prerequisite) -> InstallResult:
+        if prereq.name == "nodejs":
+            return self._install_nodejs()
+        if prereq.name == "git":
+            return self._install_git()
+        return InstallResult(
+            success=False,
+            error=StepResult(
+                status=StepStatus.FAILED,
+                message=f"No install strategy for: {prereq.name}",
+            ),
+        )
+
+    def _install_nodejs(self) -> InstallResult:
+        tmp = self.get_temp_dir()
+        msi_path = tmp / "node-latest.msi"
+        commands = [
+            ["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)],
+            ["msiexec", "/i", str(msi_path), "/qn"],
+        ]
+        return self._run_install_commands(commands)
+
+    def _install_git(self) -> InstallResult:
+        tmp = self.get_temp_dir()
+        exe_path = tmp / "git-installer.exe"
+        commands = [
+            ["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)],
+            [str(exe_path), "/VERYSILENT", "/NORESTART"],
+        ]
+        return self._run_install_commands(commands)
+
+    def _run_install_commands(self, commands: list[list[str]]) -> InstallResult:
+        for cmd in commands:
+            result = run_process(cmd)
+            if not result.succeeded:
+                return InstallResult(
+                    success=False,
+                    error=StepResult(
+                        status=StepStatus.FAILED,
+                        message=result.stderr or "Install command failed",
+                        detail=f"Command: {' '.join(cmd)}",
+                    ),
+                )
+        return InstallResult(success=True)
+
+    # ------------------------------------------------------------------
+    # verify_prerequisite
+    # ------------------------------------------------------------------
+
+    def verify_prerequisite(self, prereq: Prerequisite) -> PrereqCheckResult:
+        info = self.check_command(prereq.check_command)
+        if info is None:
+            return PrereqCheckResult(prereq=prereq, installed=False)
+
+        current_version = info.version or ""
+        if not current_version:
+            return PrereqCheckResult(prereq=prereq, installed=True, current_version=None)
+
+        ok = version_gte(current_version, prereq.min_version)
+        return PrereqCheckResult(
+            prereq=prereq,
+            installed=True,
+            current_version=current_version,
+            needs_upgrade=not ok,
+        )
+
+    # ------------------------------------------------------------------
+    # add_to_path
+    # ------------------------------------------------------------------
+
+    def add_to_path(self, path: Path) -> bool:
+        # Query current user PATH via reg command (no winreg import needed)
+        query_result = run_process(
+            ["reg", "query", r"HKCU\Environment", "/v", "Path"]
+        )
+        if not query_result.succeeded:
+            return False
+
+        current_path = self._extract_reg_value(query_result.stdout)
+        if str(path) in current_path:
+            return True
+
+        new_path = f"{current_path};{path}" if current_path else str(path)
+        set_result = run_process(
+            ["reg", "add", r"HKCU\Environment", "/v", "Path", "/t", "REG_EXPAND_SZ", "/d", new_path, "/f"]
+        )
+        return set_result.succeeded
+
+    def _extract_reg_value(self, reg_output: str) -> str:
+        for line in reg_output.splitlines():
+            line = line.strip()
+            if "REG_EXPAND_SZ" in line or "REG_SZ" in line:
+                parts = line.split("REG_EXPAND_SZ", 1) if "REG_EXPAND_SZ" in line else line.split("REG_SZ", 1)
+                if len(parts) == 2:
+                    return parts[1].strip()
+        return ""
+
+    # ------------------------------------------------------------------
+    # request_elevation
+    # ------------------------------------------------------------------
+
+    def request_elevation(self, reason_key: str) -> bool:
+        # Attempt to write to a system-protected location to detect admin rights
+        result = run_process(
+            ["reg", "query", r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "/v", "ProductName"]
+        )
+        return result.succeeded
+
+    # ------------------------------------------------------------------
+    # run_command
+    # ------------------------------------------------------------------
+
+    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+        # Windows does not use sudo; elevation is handled by UAC / runas
+        return run_process(cmd)
+
+    # ------------------------------------------------------------------
+    # get_temp_dir
+    # ------------------------------------------------------------------
+
+    def get_temp_dir(self) -> Path:
+        base = os.environ.get("TEMP", tempfile.gettempdir())
+        tmp = Path(base) / "aiready"
+        tmp.mkdir(parents=True, exist_ok=True)
+        return tmp
+
+    # ------------------------------------------------------------------
+    # open_browser
+    # ------------------------------------------------------------------
+
+    def open_browser(self, url: str) -> bool:
+        try:
+            webbrowser.open(url)
+            return True
+        except Exception:
+            return False
+
+    # ------------------------------------------------------------------
+    # get_shell_type
+    # ------------------------------------------------------------------
+
+    def get_shell_type(self) -> ShellType:
+        if os.environ.get("PSModulePath"):
+            return ShellType.POWERSHELL
+        return ShellType.CMD

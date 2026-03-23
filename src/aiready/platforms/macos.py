@@ -1,38 +1,206 @@
 # src/aiready/platforms/macos.py
-"""macOS platform stub - full implementation in Task 8."""
+"""macOS platform implementation."""
 
+from __future__ import annotations
+
+import os
+import platform as platform_module
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Optional
+
+from aiready.core.models import (
+    CommandInfo,
+    CommandResult,
+    InstallResult,
+    OSInfo,
+    PrereqCheckResult,
+    Prerequisite,
+    ShellType,
+    StepResult,
+    StepStatus,
+)
+from aiready.core.process import run_process
+from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
+
+# Download URL for Node.js macOS installer (.pkg)
+_NODEJS_PKG_URL = "https://nodejs.org/dist/latest/node-latest.pkg"
 
 
 class MacOSPlatform(Platform):
-    """Stub - full implementation in Task 8."""
+    """Platform implementation for macOS (Darwin)."""
 
-    def get_os_info(self):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # get_os_info
+    # ------------------------------------------------------------------
 
-    def check_command(self, command):
-        raise NotImplementedError
+    def get_os_info(self) -> OSInfo:
+        return OSInfo(
+            system=platform_module.system(),
+            release=platform_module.release(),
+            version=platform_module.version(),
+            arch=platform_module.machine(),
+        )
 
-    def install_prerequisite(self, prereq):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # check_command
+    # ------------------------------------------------------------------
 
-    def verify_prerequisite(self, prereq):
-        raise NotImplementedError
+    def check_command(self, command: str) -> Optional[CommandInfo]:
+        path = shutil.which(command)
+        if path is None:
+            return None
 
-    def add_to_path(self, path):
-        raise NotImplementedError
+        result = run_process([command, "--version"])
+        if result.return_code == -1:
+            return CommandInfo(path=path, version=None)
 
-    def request_elevation(self, reason_key):
-        raise NotImplementedError
+        raw = (result.stdout or result.stderr or "").strip()
+        version = raw.splitlines()[0] if raw else None
+        return CommandInfo(path=path, version=version)
 
-    def run_command(self, cmd, elevated=False):
-        raise NotImplementedError
+    # ------------------------------------------------------------------
+    # install_prerequisite
+    # ------------------------------------------------------------------
 
-    def get_temp_dir(self):
-        raise NotImplementedError
+    def install_prerequisite(self, prereq: Prerequisite) -> InstallResult:
+        if prereq.name == "nodejs":
+            return self._install_nodejs()
+        return InstallResult(
+            success=False,
+            error=StepResult(
+                status=StepStatus.FAILED,
+                message=f"No install strategy for: {prereq.name}",
+            ),
+        )
 
-    def open_browser(self, url):
-        raise NotImplementedError
+    def _install_nodejs(self) -> InstallResult:
+        brew = self.check_command("brew")
+        if brew is not None:
+            return self._install_nodejs_via_brew()
+        return self._install_nodejs_via_pkg()
 
-    def get_shell_type(self):
-        raise NotImplementedError
+    def _install_nodejs_via_brew(self) -> InstallResult:
+        result = run_process(["brew", "install", "node"])
+        if result.succeeded:
+            return InstallResult(success=True)
+        return InstallResult(
+            success=False,
+            error=StepResult(
+                status=StepStatus.FAILED,
+                message=result.stderr or "brew install node failed",
+            ),
+        )
+
+    def _install_nodejs_via_pkg(self) -> InstallResult:
+        tmp = self.get_temp_dir()
+        pkg_path = tmp / "node-latest.pkg"
+        commands = [
+            ["curl", "-fsSL", _NODEJS_PKG_URL, "-o", str(pkg_path)],
+            ["installer", "-pkg", str(pkg_path), "-target", "/"],
+        ]
+        for cmd in commands:
+            result = run_process(cmd)
+            if not result.succeeded:
+                return InstallResult(
+                    success=False,
+                    error=StepResult(
+                        status=StepStatus.FAILED,
+                        message=result.stderr or "Package install failed",
+                        detail=f"Command: {' '.join(cmd)}",
+                    ),
+                )
+        return InstallResult(success=True)
+
+    # ------------------------------------------------------------------
+    # verify_prerequisite
+    # ------------------------------------------------------------------
+
+    def verify_prerequisite(self, prereq: Prerequisite) -> PrereqCheckResult:
+        info = self.check_command(prereq.check_command)
+        if info is None:
+            return PrereqCheckResult(prereq=prereq, installed=False)
+
+        current_version = info.version or ""
+        if not current_version:
+            return PrereqCheckResult(prereq=prereq, installed=True, current_version=None)
+
+        ok = version_gte(current_version, prereq.min_version)
+        return PrereqCheckResult(
+            prereq=prereq,
+            installed=True,
+            current_version=current_version,
+            needs_upgrade=not ok,
+        )
+
+    # ------------------------------------------------------------------
+    # add_to_path
+    # ------------------------------------------------------------------
+
+    def add_to_path(self, path: Path) -> bool:
+        rc_file = self._get_rc_file()
+        export_line = f'export PATH="{path}:$PATH"'
+        try:
+            with open(rc_file, "r") as fh:
+                content = fh.read()
+            if str(path) in content:
+                return True
+            with open(rc_file, "a") as fh:
+                fh.write(f"\n{export_line}\n")
+            return True
+        except OSError:
+            return False
+
+    def _get_rc_file(self) -> Path:
+        shell = os.environ.get("SHELL", "")
+        home = Path.home()
+        if "bash" in shell:
+            return home / ".bashrc"
+        return home / ".zshrc"
+
+    # ------------------------------------------------------------------
+    # request_elevation
+    # ------------------------------------------------------------------
+
+    def request_elevation(self, reason_key: str) -> bool:
+        return os.geteuid() == 0
+
+    # ------------------------------------------------------------------
+    # run_command
+    # ------------------------------------------------------------------
+
+    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+        actual_cmd = (["sudo"] + cmd) if elevated else cmd
+        return run_process(actual_cmd)
+
+    # ------------------------------------------------------------------
+    # get_temp_dir
+    # ------------------------------------------------------------------
+
+    def get_temp_dir(self) -> Path:
+        tmp = Path(tempfile.gettempdir()) / "aiready"
+        tmp.mkdir(parents=True, exist_ok=True)
+        return tmp
+
+    # ------------------------------------------------------------------
+    # open_browser
+    # ------------------------------------------------------------------
+
+    def open_browser(self, url: str) -> bool:
+        try:
+            result = run_process(["open", url])
+            return result.succeeded
+        except Exception:
+            return False
+
+    # ------------------------------------------------------------------
+    # get_shell_type
+    # ------------------------------------------------------------------
+
+    def get_shell_type(self) -> ShellType:
+        shell = os.environ.get("SHELL", "")
+        if "bash" in shell:
+            return ShellType.BASH
+        return ShellType.ZSH
