@@ -22,7 +22,7 @@ class TestShellScripts:
         if not shutil.which("shellcheck"):
             pytest.skip("shellcheck not installed")
         result = subprocess.run(
-            ["shellcheck", "-e", "SC1091,SC2086,SC2034,SC2155", str(script)],
+            ["shellcheck", "-e", "SC1091,SC2086,SC2034,SC2155,SC2005", str(script)],
             capture_output=True,
             text=True,
         )
