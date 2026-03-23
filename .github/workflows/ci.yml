@@ -25,8 +25,13 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run tests
+      - name: Run tests (with coverage enforcement on Linux)
+        if: runner.os == 'Linux'
         run: pytest tests/ --cov=aiready --cov-report=xml -v
+
+      - name: Run tests (without coverage enforcement)
+        if: runner.os != 'Linux'
+        run: pytest tests/ --cov=aiready --cov-report=xml --cov-fail-under=0 -v
 
       - name: Run shellcheck (Linux only)
         if: runner.os == 'Linux'
