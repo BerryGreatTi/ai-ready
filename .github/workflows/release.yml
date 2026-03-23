@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Build Windows executables
+        run: |
+          pyinstaller build/pyinstaller/windows-claude.spec -y
+          pyinstaller build/pyinstaller/windows-openclaw.spec -y
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-gui
+          path: dist/*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Build macOS apps
+        run: |
+          pyinstaller build/pyinstaller/macos-claude.spec -y
+          pyinstaller build/pyinstaller/macos-openclaw.spec -y
+          cd dist && for app in *.app; do zip -r "${app%.app}.zip" "$app"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-gui
+          path: dist/*.zip
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release files
+        run: |
+          mkdir -p release-files/gui release-files/scripts
+          cp artifacts/windows-gui/* release-files/gui/ 2>/dev/null || true
+          cp artifacts/macos-gui/* release-files/gui/ 2>/dev/null || true
+          cp -r scripts/* release-files/scripts/
+          cd release-files && find . -type f | sort | xargs sha256sum > CHECKSUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-files/gui/*
+            release-files/scripts/**/*
+            release-files/CHECKSUMS.txt
+          generate_release_notes: true
