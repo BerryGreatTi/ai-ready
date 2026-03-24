@@ -142,16 +142,27 @@ class OpenClawTool(Tool):
         return StepResult(status=StepStatus.FAILED, message="Node.js not found")
 
     def _install_tool(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["npm", "install", "-g", "openclaw"])
+        system = platform.get_os_info().system
+        if system == "Windows":
+            result = platform.run_command([
+                "powershell", "-Command",
+                "iwr -useb https://openclaw.ai/install.ps1 | iex",
+            ])
+        else:
+            # macOS/Linux: official installer script
+            result = platform.run_command([
+                "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
+            ])
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message=result.stderr or "npm install failed")
+        return StepResult(status=StepStatus.FAILED, message=result.stderr or "Official installer failed")
 
     def _install_tool_fallback(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["npx", "openclaw@latest", "install"])
+        # Fallback: npm global install (Node.js is already installed at this point)
+        result = platform.run_command(["npm", "install", "-g", "openclaw@latest"])
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message=result.stderr or "npx fallback failed")
+        return StepResult(status=StepStatus.FAILED, message=result.stderr or "npm fallback failed")
 
     def _verify_install(self, platform: Platform) -> StepResult:
         info = platform.check_command("openclaw")

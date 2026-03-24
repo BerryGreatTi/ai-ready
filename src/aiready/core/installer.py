@@ -34,7 +34,8 @@ class Installer:
             if on_progress:
                 on_progress(i, step, StepResult(status=StepStatus.RUNNING))
             if self._logger:
-                self._logger.info(step.id, self._i18n.get(step.name_key))
+                tool_name = self._tool.get_name()
+                self._logger.info(step.id, self._i18n.get(step.name_key, tool=tool_name))
             result = step.action()
             if on_progress:
                 on_progress(i, step, result)

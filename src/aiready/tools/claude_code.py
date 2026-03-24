@@ -97,10 +97,11 @@ class ClaudeCodeTool(Tool):
     # -- private step implementations --
 
     def _check_system(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["node", "--version"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.SUCCESS, message="system check passed")
+        os_info = platform.get_os_info()
+        return StepResult(
+            status=StepStatus.SUCCESS,
+            message=f"{os_info.system} {os_info.release}",
+        )
 
     def _install_prereqs(self, platform: Platform) -> StepResult:
         prereqs = self.get_prerequisites(platform)
@@ -125,12 +126,20 @@ class ClaudeCodeTool(Tool):
         return StepResult(status=StepStatus.SUCCESS)
 
     def _install_tool(self, platform: Platform) -> StepResult:
-        is_windows = platform.get_os_info().system == "Windows"
-        if is_windows:
-            cmd = ["cmd", "/c", "winget", "install", "Anthropic.Claude"]
+        system = platform.get_os_info().system
+        if system == "Windows":
+            # Use CMD-based installer (avoids PowerShell Korean encoding issues)
+            tmp = platform.get_temp_dir()
+            dl_result = platform.run_command([
+                "curl", "-fsSL", "https://claude.ai/install.cmd",
+                "-o", str(tmp / "claude-install.cmd"),
+            ])
+            if not dl_result.succeeded:
+                return StepResult(status=StepStatus.FAILED, message="Failed to download installer")
+            result = platform.run_command(["cmd", "/c", str(tmp / "claude-install.cmd")])
         else:
-            cmd = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
-        result = platform.run_command(cmd)
+            # macOS/Linux: native installer via curl
+            result = platform.run_command(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"])
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message=result.stderr or "Installation failed")
