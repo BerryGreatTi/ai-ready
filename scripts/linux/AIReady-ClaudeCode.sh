@@ -15,6 +15,28 @@ step_fail() { printf "  ${RED}[FAIL]${NC} %s\n" "$1"; }
 step_info() { printf "  ${BLUE}[..]${NC}  %s\n" "$1"; }
 step_warn() { printf "  ${YELLOW}[!!]${NC}  %s\n" "$1"; }
 
+# PATH helper: permanently add to shell config
+add_to_path_permanently() {
+    local dir_to_add="$1"
+    local shell_rc
+
+    if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$(basename "${SHELL:-}")" == "zsh" ]]; then
+        shell_rc="$HOME/.zshrc"
+    else
+        shell_rc="$HOME/.bashrc"
+    fi
+
+    export PATH="$dir_to_add:$PATH"
+
+    if [[ -f "$shell_rc" ]] && grep -q "$dir_to_add" "$shell_rc" 2>/dev/null; then
+        return 0
+    fi
+
+    echo "" >> "$shell_rc"
+    echo "# Added by AIReady installer" >> "$shell_rc"
+    echo "export PATH=\"$dir_to_add:\$PATH\"" >> "$shell_rc"
+}
+
 # i18n
 LANG_ID="en"
 msg() {
@@ -32,7 +54,8 @@ msg() {
         ko_auth_open)    echo "브라우저를 열겠습니까? (Y/n)" ;;
         ko_success)      echo "Claude Code가 성공적으로 설치되었습니다!" ;;
         ko_run_cmd)      echo "시작하려면 터미널에서 다음을 실행하세요:" ;;
-        ko_new_terminal) echo "새 터미널을 열어야 할 수 있습니다." ;;
+        ko_new_terminal) echo "새 터미널 창을 열고 'claude'를 입력하세요." ;;
+        ko_path_added)   echo "PATH가 설정되었습니다." ;;
         en_welcome)      echo "AIReady - Claude Code Setup Helper" ;;
         en_lang_select)  echo "Select your language" ;;
         en_checking)     echo "Checking system..." ;;
@@ -45,7 +68,8 @@ msg() {
         en_auth_open)    echo "Open browser? (Y/n)" ;;
         en_success)      echo "Claude Code installed successfully!" ;;
         en_run_cmd)      echo "To start, run in your terminal:" ;;
-        en_new_terminal) echo "You may need to open a new terminal." ;;
+        en_new_terminal) echo "Open a new terminal window and type 'claude' to start." ;;
+        en_path_added)   echo "PATH has been configured." ;;
         *) echo "$key" ;;
     esac
 }
@@ -86,7 +110,7 @@ if command -v claude &>/dev/null; then
     step_ok "Claude Code $(claude --version 2>/dev/null || echo 'installed')"
 else
     curl -fsSL https://claude.ai/install.sh | bash
-    export PATH="$HOME/.local/bin:$PATH"
+    add_to_path_permanently "$HOME/.local/bin"
     if command -v claude &>/dev/null; then
         step_ok "Claude Code installed"
     else
@@ -121,8 +145,10 @@ fi
 echo ""
 echo "========================================"
 printf "  ${GREEN}%s${NC}\n" "$(msg success)"
+step_ok "$(msg path_added)"
 echo ""
 echo "  $(msg run_cmd)"
-echo "    claude"
 echo ""
-step_warn "$(msg new_terminal)"
+echo "    1. $(msg new_terminal)"
+echo "    2. claude"
+echo ""

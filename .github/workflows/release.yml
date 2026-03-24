@@ -69,3 +69,34 @@ jobs:
             release-files/scripts/**/*
             release-files/CHECKSUMS.txt
           generate_release_notes: true
+          body: |
+            ## Downloads
+
+            | Platform | Claude Code | OpenClaw |
+            |----------|-------------|----------|
+            | **Windows GUI** | `AIReady-ClaudeCode-Win.exe` | `AIReady-OpenClaw-Win.exe` |
+            | **macOS GUI** | `AIReady-ClaudeCode-Mac.zip` | `AIReady-OpenClaw-Mac.zip` |
+            | **Windows Script** | `AIReady-ClaudeCode.bat` | `AIReady-OpenClaw.bat` |
+            | **macOS/Linux Script** | `AIReady-ClaudeCode.sh` | `AIReady-OpenClaw.sh` |
+
+            ## macOS: "Cannot verify app" fix
+
+            macOS Gatekeeper blocks unsigned apps. To run the GUI version:
+
+            **Option A (Recommended):**
+            1. Download and unzip the `.zip` file
+            2. Open Terminal and run:
+               ```
+               xattr -cr ~/Downloads/AIReady-ClaudeCode-Mac.app
+               ```
+            3. Double-click the `.app` to open
+
+            **Option B:**
+            1. Right-click the `.app` → "Open"
+            2. Click "Open" on the security warning
+            3. If that doesn't work: System Settings → Privacy & Security → "Open Anyway"
+
+            **Option C:** Use the `.sh` script version instead (no Gatekeeper issue):
+            ```
+            curl -fsSL https://github.com/BerryGreatTi/ai-ready/releases/latest/download/AIReady-ClaudeCode.sh | bash
+            ```

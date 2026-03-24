@@ -15,6 +15,28 @@ step_fail() { printf "  ${RED}[FAIL]${NC} %s\n" "$1"; }
 step_info() { printf "  ${BLUE}[..]${NC}  %s\n" "$1"; }
 step_warn() { printf "  ${YELLOW}[!!]${NC}  %s\n" "$1"; }
 
+# PATH helper: permanently add to shell config
+add_to_path_permanently() {
+    local dir_to_add="$1"
+    local shell_rc
+
+    if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$(basename "${SHELL:-}")" == "zsh" ]]; then
+        shell_rc="$HOME/.zshrc"
+    else
+        shell_rc="$HOME/.bashrc"
+    fi
+
+    export PATH="$dir_to_add:$PATH"
+
+    if [[ -f "$shell_rc" ]] && grep -q "$dir_to_add" "$shell_rc" 2>/dev/null; then
+        return 0
+    fi
+
+    echo "" >> "$shell_rc"
+    echo "# Added by AIReady installer" >> "$shell_rc"
+    echo "export PATH=\"$dir_to_add:\$PATH\"" >> "$shell_rc"
+}
+
 # i18n
 LANG_ID="en"
 msg() {
@@ -130,12 +152,12 @@ if command -v openclaw &>/dev/null; then
     step_ok "OpenClaw $(openclaw --version 2>/dev/null || echo 'installed')"
 else
     if curl -fsSL https://openclaw.ai/install.sh | bash; then
-        export PATH="$HOME/.local/bin:$PATH"
+        add_to_path_permanently "$HOME/.local/bin"
     fi
     if ! command -v openclaw &>/dev/null; then
         npm install -g openclaw@latest
         npm_bin="$(npm root -g)/.bin"
-        export PATH="${npm_bin}:$PATH"
+        add_to_path_permanently "$npm_bin"
     fi
     if command -v openclaw &>/dev/null; then
         step_ok "OpenClaw installed"
