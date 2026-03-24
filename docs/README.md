@@ -28,6 +28,8 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | [ADR-0002](decisions/ADR-0002-tech-stack.md) | Python + CustomTkinter + PyInstaller tech stack | Accepted |
 | [ADR-0003](decisions/ADR-0003-layered-core-architecture.md) | Layered Core architecture (Approach A) | Accepted |
 | [ADR-0004](decisions/ADR-0004-windows-bat-first.md) | BAT as primary Windows script format | Accepted |
+| [ADR-0005](decisions/ADR-0005-macos-gatekeeper-strategy.md) | macOS Gatekeeper bypass strategy | Accepted |
+| [ADR-0006](decisions/ADR-0006-permanent-path-setup.md) | Permanent PATH setup in shell config | Accepted |
 
 ## Specs Index
 
@@ -35,6 +37,7 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 |------|-------|
 | [2026-03-22-aiready-requirements](specs/2026-03-22-aiready-requirements.md) | Requirements specification |
 | [2026-03-22-aiready-design](specs/2026-03-22-aiready-design.md) | Architecture and design specification |
+| [2026-03-24-testing-guide](specs/2026-03-24-testing-guide.md) | Pre-release testing procedure |
 
 ## Plans Index
 

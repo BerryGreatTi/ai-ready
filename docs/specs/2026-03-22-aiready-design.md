@@ -453,6 +453,7 @@ For OpenClaw, between Progress and Complete:
 - Linux: distro auto-detect via `/etc/os-release`, apt/dnf/pacman/apk
 - Color output with ANSI codes
 - API key input with `read -s` (silent)
+- **PATH permanently written to shell config** (`~/.zshrc` or `~/.bashrc`) via `add_to_path_permanently()` helper. Duplicate prevention via grep check. Comment marker: `# Added by AIReady installer`. See [ADR-0006](../decisions/ADR-0006-permanent-path-setup.md).
 
 ### Script File Matrix
 
