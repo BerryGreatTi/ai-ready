@@ -55,7 +55,7 @@ class ProgressScreen(ctk.CTkFrame):
             self._step_statuses.append(status_label)
 
             name_label = ctk.CTkLabel(
-                row, text=app.i18n.get(step.name_key), font=FONT_BODY, anchor="w",
+                row, text=app.i18n.get(step.name_key, tool=self._tool.get_name()), font=FONT_BODY, anchor="w",
             )
             name_label.pack(side="left", fill="x", expand=True)
             self._step_labels.append(name_label)
@@ -124,7 +124,7 @@ class ProgressScreen(ctk.CTkFrame):
         total = len(self._steps)
         if result.status == StepStatus.RUNNING:
             self._step_statuses[index].configure(text="●", text_color=COLOR_RUNNING)
-            self._status_text.configure(text=self.app.i18n.get(step.name_key))
+            self._status_text.configure(text=self.app.i18n.get(step.name_key, tool=self._tool.get_name()))
             self._progress.set(index / total)
         elif result.status == StepStatus.SUCCESS:
             self._step_statuses[index].configure(text="✓", text_color=COLOR_SUCCESS)
