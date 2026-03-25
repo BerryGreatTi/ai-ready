@@ -55,10 +55,9 @@ jobs:
 
       - name: Collect release files
         run: |
-          mkdir -p release-files/gui release-files/scripts
+          mkdir -p release-files/gui
           cp artifacts/windows-gui/* release-files/gui/ 2>/dev/null || true
           cp artifacts/macos-gui/* release-files/gui/ 2>/dev/null || true
-          cp -r scripts/* release-files/scripts/
           cd release-files && find . -type f | sort | xargs sha256sum > CHECKSUMS.txt
 
       - name: Create GitHub Release
@@ -66,7 +65,6 @@ jobs:
         with:
           files: |
             release-files/gui/*
-            release-files/scripts/**/*
             release-files/CHECKSUMS.txt
           generate_release_notes: true
           body: |
@@ -74,10 +72,8 @@ jobs:
 
             | Platform | Claude Code | OpenClaw |
             |----------|-------------|----------|
-            | **Windows GUI** | `AIReady-ClaudeCode-Win.exe` | `AIReady-OpenClaw-Win.exe` |
-            | **macOS GUI** | `AIReady-ClaudeCode-Mac.zip` | `AIReady-OpenClaw-Mac.zip` |
-            | **Windows Script** | `AIReady-ClaudeCode.bat` | `AIReady-OpenClaw.bat` |
-            | **macOS/Linux Script** | `AIReady-ClaudeCode.sh` | `AIReady-OpenClaw.sh` |
+            | **Windows** | `AIReady-ClaudeCode-Win.exe` | `AIReady-OpenClaw-Win.exe` |
+            | **macOS** | `AIReady-ClaudeCode-Mac.zip` | `AIReady-OpenClaw-Mac.zip` |
 
             ## macOS: "Cannot verify app" fix
 
@@ -92,11 +88,6 @@ jobs:
             3. Double-click the `.app` to open
 
             **Option B:**
-            1. Right-click the `.app` → "Open"
+            1. Right-click the `.app` -> "Open"
             2. Click "Open" on the security warning
-            3. If that doesn't work: System Settings → Privacy & Security → "Open Anyway"
-
-            **Option C:** Use the `.sh` script version instead (no Gatekeeper issue):
-            ```
-            curl -fsSL https://github.com/BerryGreatTi/ai-ready/releases/latest/download/AIReady-ClaudeCode.sh | bash
-            ```
+            3. If that doesn't work: System Settings -> Privacy & Security -> "Open Anyway"
