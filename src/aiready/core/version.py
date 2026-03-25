@@ -6,9 +6,11 @@ import re
 
 
 def parse_version(version_str: str) -> tuple[int, ...]:
-    cleaned = version_str.strip().lstrip("v")
-    cleaned = re.split(r"[^0-9.]", cleaned)[0]
-    parts = cleaned.split(".")
+    # Find the first version-like pattern (e.g., "2.53.0" in "git version 2.53.0.windows.2")
+    match = re.search(r"(\d+(?:\.\d+)*)", version_str)
+    if not match:
+        return ()
+    parts = match.group(1).split(".")
     return tuple(int(p) for p in parts if p)
 
 
