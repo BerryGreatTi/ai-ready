@@ -12,7 +12,11 @@ if TYPE_CHECKING:
     from aiready.core.logger import InstallLogger
 
 
-_NODEJS_PREREQ = Prerequisite("nodejs", "22.16", "node --version")
+_UNIVERSAL_PREREQS = [
+    Prerequisite("git", "2.0", "git --version"),
+    Prerequisite("nodejs", "22.16", "node --version"),
+    Prerequisite("uv", "0.1.0", "uv --version"),
+]
 
 
 class OpenClawTool(Tool):
@@ -32,7 +36,7 @@ class OpenClawTool(Tool):
         return "OpenClaw"
 
     def get_prerequisites(self, platform: Platform) -> list[Prerequisite]:
-        return [_NODEJS_PREREQ]
+        return list(_UNIVERSAL_PREREQS)
 
     def get_steps(self, platform: Platform) -> list[Step]:
         steps: list[Step] = [
@@ -44,7 +48,7 @@ class OpenClawTool(Tool):
             ),
             Step(
                 id="install_prereqs",
-                name_key="step.install_nodejs",
+                name_key="step.install_prereqs",
                 action=lambda: self._install_prereqs(platform),
                 required=True,
             ),
@@ -130,20 +134,30 @@ class OpenClawTool(Tool):
         return StepResult(status=StepStatus.SUCCESS, message="system check passed")
 
     def _install_prereqs(self, platform: Platform) -> StepResult:
-        # Skip if already installed and version is sufficient
-        check = platform.verify_prerequisite(_NODEJS_PREREQ)
-        if check.installed and not check.needs_upgrade:
-            return StepResult(status=StepStatus.SUCCESS, message="Node.js already installed")
-        install_result = platform.install_prerequisite(_NODEJS_PREREQ)
-        if install_result.success:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message="Failed to install Node.js")
+        prereqs = self.get_prerequisites(platform)
+        for prereq in prereqs:
+            check = platform.verify_prerequisite(prereq)
+            if check.installed and not check.needs_upgrade:
+                continue
+            install_result = platform.install_prerequisite(prereq)
+            if not install_result.success:
+                return StepResult(
+                    status=StepStatus.FAILED,
+                    message=f"Failed to install {prereq.name}",
+                    detail=install_result.error.message if install_result.error else None,
+                )
+        return StepResult(status=StepStatus.SUCCESS)
 
     def _verify_prereqs(self, platform: Platform) -> StepResult:
-        check = platform.verify_prerequisite(_NODEJS_PREREQ)
-        if check.installed:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message="Node.js not found")
+        prereqs = self.get_prerequisites(platform)
+        for prereq in prereqs:
+            check = platform.verify_prerequisite(prereq)
+            if not check.installed:
+                return StepResult(
+                    status=StepStatus.FAILED,
+                    message=f"{prereq.name} not found",
+                )
+        return StepResult(status=StepStatus.SUCCESS)
 
     def _install_tool(self, platform: Platform) -> StepResult:
         system = platform.get_os_info().system

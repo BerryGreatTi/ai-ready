@@ -36,28 +36,16 @@ class TestOpenClawToolName:
 
 
 class TestOpenClawPrerequisites:
-    def test_prerequisites_always_nodejs_on_linux(self):
-        platform = _make_platform(system="Linux")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert len(prereqs) == 1
-        assert prereqs[0].name == "nodejs"
-        assert prereqs[0].min_version == "22.16"
-        assert prereqs[0].check_command == "node --version"
-
-    def test_prerequisites_always_nodejs_on_macos(self):
-        platform = _make_platform(system="Darwin")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert len(prereqs) == 1
-        assert prereqs[0].name == "nodejs"
-
-    def test_prerequisites_always_nodejs_on_windows(self):
-        platform = _make_platform(system="Windows")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert len(prereqs) == 1
-        assert prereqs[0].name == "nodejs"
+    def test_universal_prereqs_on_all_platforms(self):
+        for system in ("Linux", "Darwin", "Windows"):
+            platform = _make_platform(system=system)
+            tool = _make_tool(platform)
+            prereqs = tool.get_prerequisites(platform)
+            assert len(prereqs) == 3
+            names = [p.name for p in prereqs]
+            assert "git" in names
+            assert "nodejs" in names
+            assert "uv" in names
 
 
 class TestOpenClawSteps:

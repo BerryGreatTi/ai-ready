@@ -30,6 +30,7 @@ from aiready.platforms.base import Platform
 _KNOWN_PATHS: dict[str, list[str]] = {
     "git": [r"C:\Program Files\Git\cmd\git.exe"],
     "node": [r"C:\Program Files\nodejs\node.exe"],
+    "uv": [],  # dynamic path added at runtime via USERPROFILE
 }
 
 # Node.js MSI download URL (LTS)
@@ -80,9 +81,12 @@ class WindowsPlatform(Platform):
     def _find_known_path(self, command: str) -> Optional[str]:
         candidates = list(_KNOWN_PATHS.get(command, []))
         # Add dynamic paths that depend on runtime environment
+        userprofile = os.environ.get("USERPROFILE", r"C:\Users\Default")
         if command == "claude":
-            userprofile = os.environ.get("USERPROFILE", r"C:\Users\Default")
             candidates.append(str(Path(userprofile) / ".local" / "bin" / "claude.exe"))
+        if command == "uv":
+            candidates.append(str(Path(userprofile) / ".local" / "bin" / "uv.exe"))
+            candidates.append(str(Path(userprofile) / ".cargo" / "bin" / "uv.exe"))
         for candidate in candidates:
             if Path(candidate).exists():
                 return candidate
@@ -97,6 +101,8 @@ class WindowsPlatform(Platform):
             return self._install_nodejs()
         if prereq.name == "git":
             return self._install_git()
+        if prereq.name == "uv":
+            return self._install_uv()
         return InstallResult(
             success=False,
             error=StepResult(
@@ -117,6 +123,19 @@ class WindowsPlatform(Platform):
             self._refresh_path()
         return result
 
+    def _install_uv(self) -> InstallResult:
+        result = run_process([
+            "powershell", "-ExecutionPolicy", "ByPass", "-Command",
+            "irm https://astral.sh/uv/install.ps1 | iex",
+        ])
+        if result.succeeded:
+            self._refresh_path()
+            return InstallResult(success=True)
+        return InstallResult(
+            success=False,
+            error=StepResult(status=StepStatus.FAILED, message=result.stderr or "UV installation failed"),
+        )
+
     def _install_nodejs(self) -> InstallResult:
         tmp = self.get_temp_dir()
         msi_path = tmp / "node-latest.msi"
@@ -134,10 +153,12 @@ class WindowsPlatform(Platform):
         # Don't replace PATH from registry (contains unexpanded %VAR% on Windows).
         # Instead, append known install locations to the current process PATH.
         current = os.environ.get("PATH", "")
+        userprofile = os.environ.get("USERPROFILE", "")
         dirs_to_add = [
             r"C:\Program Files\Git\cmd",
             r"C:\Program Files\nodejs",
-            os.path.join(os.environ.get("USERPROFILE", ""), ".local", "bin"),
+            os.path.join(userprofile, ".local", "bin"),
+            os.path.join(userprofile, ".cargo", "bin"),
         ]
         for d in dirs_to_add:
             if d and d not in current:

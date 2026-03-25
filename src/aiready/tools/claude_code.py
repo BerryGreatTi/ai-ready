@@ -11,6 +11,12 @@ if TYPE_CHECKING:
     from aiready.i18n.strings import I18n
     from aiready.core.logger import InstallLogger
 
+_UNIVERSAL_PREREQS = [
+    Prerequisite("git", "2.0", "git --version"),
+    Prerequisite("nodejs", "22.16", "node --version"),
+    Prerequisite("uv", "0.1.0", "uv --version"),
+]
+
 
 class ClaudeCodeTool(Tool):
     """Defines the installation workflow for Claude Code."""
@@ -29,13 +35,9 @@ class ClaudeCodeTool(Tool):
         return "Claude Code"
 
     def get_prerequisites(self, platform: Platform) -> list[Prerequisite]:
-        if platform.get_os_info().system == "Windows":
-            return [Prerequisite("git", "2.0", "git --version")]
-        return []
+        return list(_UNIVERSAL_PREREQS)
 
     def get_steps(self, platform: Platform) -> list[Step]:
-        is_windows = platform.get_os_info().system == "Windows"
-
         steps: list[Step] = [
             Step(
                 id="check_system",
@@ -45,15 +47,15 @@ class ClaudeCodeTool(Tool):
             ),
             Step(
                 id="install_prereqs",
-                name_key="step.install_git",
+                name_key="step.install_prereqs",
                 action=lambda: self._install_prereqs(platform),
-                required=is_windows,
+                required=True,
             ),
             Step(
                 id="verify_prereqs",
                 name_key="step.verify_prereqs",
                 action=lambda: self._verify_prereqs(platform),
-                required=is_windows,
+                required=True,
             ),
             Step(
                 id="install_tool",

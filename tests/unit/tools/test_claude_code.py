@@ -36,26 +36,16 @@ class TestClaudeCodeToolName:
 
 
 class TestClaudeCodePrerequisites:
-    def test_prerequisites_empty_on_linux(self):
-        platform = _make_platform(system="Linux")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert prereqs == []
-
-    def test_prerequisites_empty_on_macos(self):
-        platform = _make_platform(system="Darwin")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert prereqs == []
-
-    def test_prerequisites_git_on_windows(self):
-        platform = _make_platform(system="Windows")
-        tool = _make_tool(platform)
-        prereqs = tool.get_prerequisites(platform)
-        assert len(prereqs) == 1
-        assert prereqs[0].name == "git"
-        assert prereqs[0].min_version == "2.0"
-        assert prereqs[0].check_command == "git --version"
+    def test_universal_prereqs_on_all_platforms(self):
+        for system in ("Linux", "Darwin", "Windows"):
+            platform = _make_platform(system=system)
+            tool = _make_tool(platform)
+            prereqs = tool.get_prerequisites(platform)
+            assert len(prereqs) == 3
+            names = [p.name for p in prereqs]
+            assert "git" in names
+            assert "nodejs" in names
+            assert "uv" in names
 
 
 class TestClaudeCodeSteps:

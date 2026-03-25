@@ -68,6 +68,10 @@ class MacOSPlatform(Platform):
     def install_prerequisite(self, prereq: Prerequisite) -> InstallResult:
         if prereq.name == "nodejs":
             return self._install_nodejs()
+        if prereq.name == "git":
+            return self._install_git()
+        if prereq.name == "uv":
+            return self._install_uv()
         return InstallResult(
             success=False,
             error=StepResult(
@@ -75,6 +79,30 @@ class MacOSPlatform(Platform):
                 message=f"No install strategy for: {prereq.name}",
             ),
         )
+
+    def _install_git(self) -> InstallResult:
+        brew = self.check_command("brew")
+        if brew:
+            result = run_process(["brew", "install", "git"])
+        else:
+            # Trigger Xcode CLT install which includes git
+            result = run_process(["xcode-select", "--install"])
+        return InstallResult(success=result.succeeded)
+
+    def _install_uv(self) -> InstallResult:
+        result = run_process(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
+        if result.succeeded:
+            import os
+            home = os.environ.get("HOME", os.path.expanduser("~"))
+            cargo_bin = os.path.join(home, ".cargo", "bin")
+            local_bin = os.path.join(home, ".local", "bin")
+            current = os.environ.get("PATH", "")
+            for d in [cargo_bin, local_bin]:
+                if d not in current:
+                    os.environ["PATH"] = f"{d}:{current}"
+                    current = os.environ["PATH"]
+            return InstallResult(success=True)
+        return InstallResult(success=False, error=StepResult(status=StepStatus.FAILED, message=result.stderr or "UV installation failed"))
 
     def _install_nodejs(self) -> InstallResult:
         brew = self.check_command("brew")
