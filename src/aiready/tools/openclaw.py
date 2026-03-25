@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from aiready.core.models import Prerequisite, Step, StepResult, StepStatus
+from aiready.core.process import run_process_uncaptured
 from aiready.platforms.base import Platform
 from aiready.tools.base import OnboardingConfig, OnboardingMode, Tool
 
@@ -62,12 +63,6 @@ class OpenClawTool(Tool):
                 id="install_tool",
                 name_key="step.install_tool",
                 action=lambda: self._install_tool(platform),
-                required=False,
-            ),
-            Step(
-                id="install_tool_fallback",
-                name_key="step.install_tool_fallback",
-                action=lambda: self._install_tool_fallback(platform),
                 required=True,
             ),
             Step(
@@ -160,25 +155,43 @@ class OpenClawTool(Tool):
         return StepResult(status=StepStatus.SUCCESS)
 
     def _install_tool(self, platform: Platform) -> StepResult:
+        _TIMEOUT = 600
         system = platform.get_os_info().system
-        if system == "Windows":
-            result = platform.run_command([
-                "powershell", "-Command",
-                "iwr -useb https://openclaw.ai/install.ps1 | iex",
-            ], timeout=600)
-        else:
-            result = platform.run_command([
-                "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
-            ], timeout=600)
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message=result.stderr or "Official installer failed")
 
-    def _install_tool_fallback(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["npm", "install", "-g", "openclaw@latest"], timeout=600)
+        # Method 1: Official installer script (uncaptured to avoid pipe deadlock)
+        if system == "Windows":
+            if self._logger:
+                self._logger.debug("install_tool", "Trying official PS1 installer (uncaptured)")
+            result = run_process_uncaptured([
+                "powershell", "-ExecutionPolicy", "ByPass", "-Command",
+                "iwr -useb https://openclaw.ai/install.ps1 | iex",
+            ], timeout=_TIMEOUT)
+        else:
+            if self._logger:
+                self._logger.debug("install_tool", "Trying official SH installer (uncaptured)")
+            result = run_process_uncaptured([
+                "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
+            ], timeout=_TIMEOUT)
+        if self._logger:
+            self._logger.debug("install_tool", f"Official installer: code={result.return_code} stdout={result.stdout[-300:]} stderr={result.stderr[-300:]}")
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message=result.stderr or "npm fallback failed")
+
+        # Method 2: npm global install (Node.js already installed)
+        if self._logger:
+            self._logger.debug("install_tool", "Trying npm install as fallback")
+        result2 = run_process_uncaptured(["npm", "install", "-g", "openclaw@latest"], timeout=_TIMEOUT)
+        if self._logger:
+            self._logger.debug("install_tool", f"npm install: code={result2.return_code} stdout={result2.stdout[-300:]} stderr={result2.stderr[-300:]}")
+        if result2.succeeded:
+            return StepResult(status=StepStatus.SUCCESS)
+
+        # Both failed
+        detail = (
+            f"Official installer: code={result.return_code} stderr={result.stderr[-200:]}\n"
+            f"npm install: code={result2.return_code} stderr={result2.stderr[-200:]}"
+        )
+        return StepResult(status=StepStatus.FAILED, message="All installation methods failed", detail=detail)
 
     def _verify_install(self, platform: Platform) -> StepResult:
         info = platform.check_command("openclaw")

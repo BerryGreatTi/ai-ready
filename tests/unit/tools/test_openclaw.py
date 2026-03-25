@@ -54,7 +54,6 @@ class TestOpenClawSteps:
         "install_prereqs",
         "verify_prereqs",
         "install_tool",
-        "install_tool_fallback",
         "verify_install",
         "select_provider",
         "configure_api_key",
@@ -68,7 +67,7 @@ class TestOpenClawSteps:
         platform = _make_platform()
         tool = _make_tool(platform)
         steps = tool.get_steps(platform)
-        assert len(steps) == 12
+        assert len(steps) == 11
 
     def test_step_ids(self):
         platform = _make_platform()
@@ -77,14 +76,12 @@ class TestOpenClawSteps:
         step_ids = [s.id for s in steps]
         assert step_ids == self.EXPECTED_STEP_IDS
 
-    def test_fallback_step_after_install(self):
+    def test_install_tool_is_required(self):
         platform = _make_platform()
         tool = _make_tool(platform)
         steps = tool.get_steps(platform)
-        step_ids = [s.id for s in steps]
-        install_idx = step_ids.index("install_tool")
-        fallback_idx = step_ids.index("install_tool_fallback")
-        assert fallback_idx == install_idx + 1
+        install_step = next(s for s in steps if s.id == "install_tool")
+        assert install_step.required is True
 
     def test_steps_are_callable(self):
         platform = _make_platform()
