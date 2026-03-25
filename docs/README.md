@@ -38,6 +38,7 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | [2026-03-22-aiready-requirements](specs/2026-03-22-aiready-requirements.md) | Requirements specification |
 | [2026-03-22-aiready-design](specs/2026-03-22-aiready-design.md) | Architecture and design specification |
 | [2026-03-24-testing-guide](specs/2026-03-24-testing-guide.md) | Pre-release testing procedure |
+| [2026-03-25-virtualbox-test-setup](specs/2026-03-25-virtualbox-test-setup.md) | VirtualBox Windows 10/11 test environment setup |
 
 ## Plans Index
 
