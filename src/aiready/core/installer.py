@@ -47,6 +47,8 @@ class Installer:
                 on_progress(i, step, result)
             if self._logger and result.failed:
                 self._logger.error(step.id, result.message or "Failed")
+                if result.detail:
+                    self._logger.error(step.id, f"Detail: {result.detail}")
             if result.failed and step.required:
                 return InstallResult(success=False, failed_step=step, error=result)
         return InstallResult(success=True)

@@ -167,14 +167,21 @@ class WindowsPlatform(Platform):
 
     def _run_install_commands(self, commands: list[list[str]]) -> InstallResult:
         for cmd in commands:
-            result = run_process(cmd)
+            result = run_process(cmd, timeout=300)
             if not result.succeeded:
+                cmd_str = " ".join(cmd)
+                detail = (
+                    f"Command: {cmd_str}\n"
+                    f"Return code: {result.return_code}\n"
+                    f"Stdout: {result.stdout[:500]}\n"
+                    f"Stderr: {result.stderr[:500]}"
+                )
                 return InstallResult(
                     success=False,
                     error=StepResult(
                         status=StepStatus.FAILED,
-                        message=result.stderr or "Install command failed",
-                        detail=f"Command: {' '.join(cmd)}",
+                        message=result.stderr.strip() or result.stdout.strip() or f"Command failed: {cmd_str}",
+                        detail=detail,
                     ),
                 )
         return InstallResult(success=True)

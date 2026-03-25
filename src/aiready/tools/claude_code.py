@@ -119,11 +119,19 @@ class ClaudeCodeTool(Tool):
             install_result = platform.install_prerequisite(prereq)
             if self._logger:
                 self._logger.debug("install_prereqs", f"{prereq.name} install result: success={install_result.success}")
+                if install_result.error:
+                    self._logger.debug("install_prereqs", f"{prereq.name} error: {install_result.error.message}")
+                    if install_result.error.detail:
+                        self._logger.debug("install_prereqs", f"{prereq.name} detail: {install_result.error.detail}")
             if not install_result.success:
+                error_msg = f"Failed to install {prereq.name}"
+                error_detail = ""
+                if install_result.error:
+                    error_detail = install_result.error.detail or install_result.error.message or ""
                 return StepResult(
                     status=StepStatus.FAILED,
-                    message=f"Failed to install {prereq.name}",
-                    detail=install_result.error.message if install_result.error else None,
+                    message=error_msg,
+                    detail=error_detail,
                 )
         return StepResult(status=StepStatus.SUCCESS)
 
