@@ -102,6 +102,12 @@ Verify on Fedora (if available):
 | Korean Windows encoding in PS1 | Use .bat script instead |
 | winget unavailable on some Windows | Scripts use direct download, not winget |
 | PATH not effective until new terminal | Success message instructs user to open new terminal |
+| MSI install fails with error 1603 | Requires admin elevation (`Start-Process -Verb RunAs`) |
+| PATH from registry has unexpanded %VAR% | Append known dirs, never replace from registry |
+| Installer hangs (pipe buffer deadlock) | Use `run_process_uncaptured()` for long-running installers |
+| Version parser fails on "git version X" | Use `re.search(r"(\d+(?:\.\d+)*)")` to extract numbers |
+| Download URL returns 404 | Pin to specific version, verify before release |
+| 120s timeout too short for installers | Use 600s for install commands |
 
 ### 7. Release checklist
 
@@ -110,8 +116,10 @@ Before creating a final release (non-rc):
 - [ ] All CI checks pass (Ubuntu/macOS/Windows)
 - [ ] macOS GUI tested with Gatekeeper bypass
 - [ ] macOS script tested: PATH persists in new terminal
-- [ ] Windows GUI tested on clean Windows 10
-- [ ] Windows BAT tested on Korean Windows
-- [ ] Linux script tested on Ubuntu
-- [ ] Landing page download links work
+- [ ] Windows GUI tested on **clean VirtualBox Windows 10/11 VM**
+- [ ] Windows GUI: Git, Node.js, UV all install with UAC prompt
+- [ ] Windows GUI: Claude Code installs (3-tier fallback: CMD -> PS1 -> npm)
+- [ ] Windows GUI: Already-installed tools are skipped (not reinstalled)
+- [ ] Download URLs verified (no 404s)
 - [ ] Release notes include Gatekeeper bypass instructions
+- [ ] Log file (`%TEMP%\aiready\install.log`) contains DEBUG-level detail

@@ -31,6 +31,7 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | [ADR-0005](decisions/ADR-0005-macos-gatekeeper-strategy.md) | macOS Gatekeeper bypass strategy | Accepted |
 | [ADR-0006](decisions/ADR-0006-permanent-path-setup.md) | Permanent PATH setup in shell config | Accepted |
 | [ADR-0007](decisions/ADR-0007-universal-prerequisites.md) | Universal prerequisites (Git, Node.js, UV) for all tools | Accepted |
+| [ADR-0008](decisions/ADR-0008-windows-installer-lessons.md) | Windows installer lessons learned (rc1-rc15) | Accepted |
 
 ## Specs Index
 

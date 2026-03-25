@@ -4,17 +4,16 @@
 
 AIReady is a cross-platform installer helper that automates the installation and onboarding of AI coding tools (Claude Code, OpenClaw) for beginners. It targets non-developer users on Korean/English Windows, macOS, and Linux systems.
 
-### Deliverables
+### Release Deliverables
 
 | Platform | Claude Code | OpenClaw |
 |----------|-------------|----------|
 | Windows GUI (.exe) | Yes | Yes |
-| Windows Script (.bat + .ps1) | Yes | Yes |
 | macOS GUI (.app) | Yes | Yes |
-| macOS Script (.sh) | Yes | Yes |
-| Linux Script (.sh) | Yes | Yes |
 
-**Total: 10 deliverables**
+**Total: 4 release artifacts** (GUI only; scripts remain in source but excluded from releases)
+
+Scripts (.bat, .ps1, .sh) are available in the `scripts/` directory of the repository but are not included in GitHub Releases. The GUI is the primary delivery method for all platforms.
 
 File naming convention: `AIReady-{Tool}-{Platform}.{ext}`
 
@@ -328,19 +327,23 @@ class Tool(ABC):
 7. authenticate - browser OAuth (GUIDED mode)
 8. verify_auth - verify authentication via `claude doctor`
 
-**Platform-specific installation commands:**
-- macOS/Linux: `curl -fsSL https://claude.ai/install.sh | bash`
-- Windows GUI (.exe): Download and execute `https://claude.ai/install.cmd` via `subprocess` (avoids PowerShell entirely, uses CMD which is encoding-safe)
-- Windows BAT script: `curl -fsSL https://claude.ai/install.cmd -o "%TEMP%\claude-install.cmd" && "%TEMP%\claude-install.cmd"`
-- Windows PS1 script: `irm https://claude.ai/install.ps1 | iex` (secondary option)
+**Platform-specific installation (3-tier fallback on Windows):**
+- macOS/Linux: `curl -fsSL https://claude.ai/install.sh | bash` (via `run_process_uncaptured`)
+- Windows Method 1: CMD installer (`install.cmd`) - encoding-safe, preferred
+- Windows Method 2: PowerShell installer (`install.ps1`) - fallback
+- Windows Method 3: npm install (`@anthropic-ai/claude-code`) - final fallback (Node.js already installed)
 
-**Note on Windows:** The GUI (.exe) and BAT script use the CMD-based installer (`install.cmd`) to avoid Korean encoding issues with the PowerShell installer. The PS1 script uses the PowerShell installer as a secondary option.
+**Critical implementation notes (from rc1-rc15 testing):**
+- All installer commands use `run_process_uncaptured()` to avoid pipe buffer deadlocks with large output. See [ADR-0008](../decisions/ADR-0008-windows-installer-lessons.md).
+- Timeout is 600 seconds (10 minutes) for installer commands.
+- `stdin=DEVNULL` prevents installers from waiting for user input.
+- After each prerequisite install, PATH is refreshed by appending known dirs (never replacing from registry).
 
 **Onboarding:** GUIDED mode. Browser-based auth cannot be fully automated. Installer opens browser automatically and shows step-by-step instructions. User clicks "Authentication Complete" button, then `claude doctor` verifies.
 
 ### OpenClawTool
 
-**Prerequisites:** Node.js 22.16+ (all platforms).
+**Prerequisites:** Git >= 2.0, Node.js >= 22.16, UV >= 0.1.0 (all platforms, same as ClaudeCodeTool).
 
 **Steps:**
 1. check_system - OS/network
