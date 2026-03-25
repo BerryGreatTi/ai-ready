@@ -153,21 +153,64 @@ class ClaudeCodeTool(Tool):
     def _install_tool(self, platform: Platform) -> StepResult:
         system = platform.get_os_info().system
         if system == "Windows":
-            # Use CMD-based installer (avoids PowerShell Korean encoding issues)
-            tmp = platform.get_temp_dir()
-            dl_result = platform.run_command([
-                "curl", "-fsSL", "https://claude.ai/install.cmd",
-                "-o", str(tmp / "claude-install.cmd"),
-            ])
-            if not dl_result.succeeded:
-                return StepResult(status=StepStatus.FAILED, message="Failed to download installer")
-            result = platform.run_command(["cmd", "/c", str(tmp / "claude-install.cmd")])
+            return self._install_tool_windows(platform)
         else:
-            # macOS/Linux: native installer via curl
-            result = platform.run_command(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"])
+            return self._install_tool_unix(platform)
+
+    def _install_tool_windows(self, platform: Platform) -> StepResult:
+        # Method 1: CMD-based installer
+        tmp = platform.get_temp_dir()
+        dl_result = platform.run_command([
+            "curl", "-fsSL", "https://claude.ai/install.cmd",
+            "-o", str(tmp / "claude-install.cmd"),
+        ])
+        if dl_result.succeeded:
+            result = platform.run_command(["cmd", "/c", str(tmp / "claude-install.cmd")])
+            if self._logger:
+                self._logger.debug("install_tool", f"install.cmd: code={result.return_code} stdout={result.stdout[:300]} stderr={result.stderr[:300]}")
+            if result.succeeded:
+                return StepResult(status=StepStatus.SUCCESS)
+
+        # Method 2: PowerShell installer (fallback)
+        if self._logger:
+            self._logger.debug("install_tool", "Trying PowerShell installer as fallback")
+        result2 = platform.run_command([
+            "powershell", "-ExecutionPolicy", "ByPass", "-Command",
+            "irm https://claude.ai/install.ps1 | iex",
+        ])
+        if self._logger:
+            self._logger.debug("install_tool", f"install.ps1: code={result2.return_code} stdout={result2.stdout[:300]} stderr={result2.stderr[:300]}")
+        if result2.succeeded:
+            return StepResult(status=StepStatus.SUCCESS)
+
+        # Method 3: npm (deprecated but works)
+        if self._logger:
+            self._logger.debug("install_tool", "Trying npm install as fallback")
+        result3 = platform.run_command(["npm", "install", "-g", "@anthropic-ai/claude-code"])
+        if self._logger:
+            self._logger.debug("install_tool", f"npm: code={result3.return_code} stdout={result3.stdout[:300]} stderr={result3.stderr[:300]}")
+        if result3.succeeded:
+            return StepResult(status=StepStatus.SUCCESS)
+
+        # All methods failed
+        detail = (
+            f"CMD installer: code={dl_result.return_code if dl_result else 'skip'}\n"
+            f"PS1 installer: code={result2.return_code}\n"
+            f"npm install: code={result3.return_code} stderr={result3.stderr[:200]}"
+        )
+        return StepResult(status=StepStatus.FAILED, message="All installation methods failed", detail=detail)
+
+    def _install_tool_unix(self, platform: Platform) -> StepResult:
+        result = platform.run_command(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"])
+        if self._logger:
+            self._logger.debug("install_tool", f"install.sh: code={result.return_code} stdout={result.stdout[:300]} stderr={result.stderr[:300]}")
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message=result.stderr or "Installation failed")
+        return StepResult(
+            status=StepStatus.FAILED,
+            message=result.stderr.strip() or result.stdout.strip() or "Installation failed",
+            detail=f"Return code: {result.return_code}",
+        )
 
     def _verify_install(self, platform: Platform) -> StepResult:
         info = platform.check_command("claude")
