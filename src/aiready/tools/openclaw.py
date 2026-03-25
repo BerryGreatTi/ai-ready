@@ -158,32 +158,41 @@ class OpenClawTool(Tool):
         _TIMEOUT = 600
         system = platform.get_os_info().system
 
-        # Method 1: Official installer script (uncaptured to avoid pipe deadlock)
+        # Method 1: Official installer script
         if system == "Windows":
             if self._logger:
-                self._logger.debug("install_tool", "Trying official PS1 installer (uncaptured)")
+                self._logger.debug("install_tool", "Trying official PS1 installer")
             result = run_process_live([
                 "powershell", "-ExecutionPolicy", "ByPass", "-Command",
                 "iwr -useb https://openclaw.ai/install.ps1 | iex",
             ], timeout=_TIMEOUT)
         else:
             if self._logger:
-                self._logger.debug("install_tool", "Trying official SH installer (uncaptured)")
+                self._logger.debug("install_tool", "Trying official SH installer")
             result = run_process_live([
                 "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
             ], timeout=_TIMEOUT)
         if self._logger:
             self._logger.debug("install_tool", f"Official installer: code={result.return_code} stdout={result.stdout[-300:]} stderr={result.stderr[-300:]}")
-        if result.succeeded:
+
+        # The official installer may report failure even though openclaw was installed
+        # (e.g., PATH not refreshed during its own verification). Check ourselves.
+        self._refresh_path_for_openclaw(platform)
+        if platform.check_command("openclaw") is not None:
+            if self._logger:
+                self._logger.debug("install_tool", "openclaw found in PATH after official installer (ignoring exit code)")
             return StepResult(status=StepStatus.SUCCESS)
 
         # Method 2: npm global install (Node.js already installed)
+        self._refresh_path_for_npm(platform)
         if self._logger:
             self._logger.debug("install_tool", "Trying npm install as fallback")
         result2 = run_process_live(["npm", "install", "-g", "openclaw@latest"], timeout=_TIMEOUT)
         if self._logger:
             self._logger.debug("install_tool", f"npm install: code={result2.return_code} stdout={result2.stdout[-300:]} stderr={result2.stderr[-300:]}")
-        if result2.succeeded:
+
+        self._refresh_path_for_openclaw(platform)
+        if platform.check_command("openclaw") is not None:
             return StepResult(status=StepStatus.SUCCESS)
 
         # Both failed
@@ -192,6 +201,36 @@ class OpenClawTool(Tool):
             f"npm install: code={result2.return_code} stderr={result2.stderr[-200:]}"
         )
         return StepResult(status=StepStatus.FAILED, message="All installation methods failed", detail=detail)
+
+    def _refresh_path_for_openclaw(self, platform: Platform) -> None:
+        """Add common openclaw install locations to current PATH."""
+        import os
+        current = os.environ.get("PATH", "")
+        home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
+        dirs = [
+            os.path.join(home, ".local", "bin"),
+            os.path.join(home, ".openclaw", "bin"),
+            os.path.join(home, "AppData", "Roaming", "npm"),
+            os.path.join(home, ".npm-global", "bin"),
+        ]
+        for d in dirs:
+            if d and d not in current and os.path.isdir(d):
+                current = f"{d}{os.pathsep}{current}"
+        os.environ["PATH"] = current
+
+    def _refresh_path_for_npm(self, platform: Platform) -> None:
+        """Ensure npm is findable in PATH."""
+        import os
+        current = os.environ.get("PATH", "")
+        npm_dirs = [
+            r"C:\Program Files\nodejs",
+            os.path.join(os.environ.get("USERPROFILE", ""), "AppData", "Roaming", "npm"),
+            "/usr/local/bin",
+        ]
+        for d in npm_dirs:
+            if d and d not in current and os.path.isdir(d):
+                current = f"{d}{os.pathsep}{current}"
+        os.environ["PATH"] = current
 
     def _verify_install(self, platform: Platform) -> StepResult:
         info = platform.check_command("openclaw")
