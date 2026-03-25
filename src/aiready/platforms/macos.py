@@ -21,7 +21,7 @@ from aiready.core.models import (
     StepResult,
     StepStatus,
 )
-from aiready.core.process import run_process
+from aiready.core.process import run_process, run_process_live
 from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
 
@@ -83,14 +83,13 @@ class MacOSPlatform(Platform):
     def _install_git(self) -> InstallResult:
         brew = self.check_command("brew")
         if brew:
-            result = run_process(["brew", "install", "git"])
+            result = run_process_live(["brew", "install", "git"])
         else:
-            # Trigger Xcode CLT install which includes git
-            result = run_process(["xcode-select", "--install"])
+            result = run_process_live(["xcode-select", "--install"])
         return InstallResult(success=result.succeeded)
 
     def _install_uv(self) -> InstallResult:
-        result = run_process(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
+        result = run_process_live(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
         if result.succeeded:
             import os
             home = os.environ.get("HOME", os.path.expanduser("~"))
@@ -111,7 +110,7 @@ class MacOSPlatform(Platform):
         return self._install_nodejs_via_pkg()
 
     def _install_nodejs_via_brew(self) -> InstallResult:
-        result = run_process(["brew", "install", "node"])
+        result = run_process_live(["brew", "install", "node"])
         if result.succeeded:
             return InstallResult(success=True)
         return InstallResult(
@@ -130,7 +129,7 @@ class MacOSPlatform(Platform):
             ["installer", "-pkg", str(pkg_path), "-target", "/"],
         ]
         for cmd in commands:
-            result = run_process(cmd)
+            result = run_process_live(cmd)
             if not result.succeeded:
                 return InstallResult(
                     success=False,

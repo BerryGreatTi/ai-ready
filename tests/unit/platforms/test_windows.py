@@ -144,7 +144,7 @@ class TestCheckCommand:
 class TestInstallPrerequisite:
     def test_nodejs_install_success(self, platform, nodejs_prereq):
         success = CommandResult(return_code=0, stdout="", stderr="")
-        with patch("aiready.platforms.windows.run_process", return_value=success), patch.object(
+        with patch("aiready.platforms.windows.run_process_live", return_value=success), patch.object(
             platform, "get_temp_dir", return_value=Path(r"C:\Temp\aiready")
         ):
             result = platform.install_prerequisite(nodejs_prereq)
@@ -154,7 +154,7 @@ class TestInstallPrerequisite:
 
     def test_nodejs_install_failure(self, platform, nodejs_prereq):
         fail = CommandResult(return_code=1, stdout="", stderr="Download failed")
-        with patch("aiready.platforms.windows.run_process", return_value=fail), patch.object(
+        with patch("aiready.platforms.windows.run_process_live", return_value=fail), patch.object(
             platform, "get_temp_dir", return_value=Path(r"C:\Temp\aiready")
         ):
             result = platform.install_prerequisite(nodejs_prereq)
@@ -164,7 +164,7 @@ class TestInstallPrerequisite:
 
     def test_git_install_success(self, platform, git_prereq):
         success = CommandResult(return_code=0, stdout="", stderr="")
-        with patch("aiready.platforms.windows.run_process", return_value=success), patch.object(
+        with patch("aiready.platforms.windows.run_process_live", return_value=success), patch.object(
             platform, "get_temp_dir", return_value=Path(r"C:\Temp\aiready")
         ):
             result = platform.install_prerequisite(git_prereq)
@@ -186,7 +186,7 @@ class TestInstallPrerequisite:
             calls.append(cmd)
             return CommandResult(return_code=0, stdout="", stderr="")
 
-        with patch("aiready.platforms.windows.run_process", side_effect=capture_run), patch.object(
+        with patch("aiready.platforms.windows.run_process_live", side_effect=capture_run), patch.object(
             platform, "get_temp_dir", return_value=Path(r"C:\Temp\aiready")
         ):
             platform.install_prerequisite(nodejs_prereq)

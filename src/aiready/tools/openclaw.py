@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from aiready.core.models import Prerequisite, Step, StepResult, StepStatus
-from aiready.core.process import run_process_uncaptured
+from aiready.core.process import run_process_live
 from aiready.platforms.base import Platform
 from aiready.tools.base import OnboardingConfig, OnboardingMode, Tool
 
@@ -162,14 +162,14 @@ class OpenClawTool(Tool):
         if system == "Windows":
             if self._logger:
                 self._logger.debug("install_tool", "Trying official PS1 installer (uncaptured)")
-            result = run_process_uncaptured([
+            result = run_process_live([
                 "powershell", "-ExecutionPolicy", "ByPass", "-Command",
                 "iwr -useb https://openclaw.ai/install.ps1 | iex",
             ], timeout=_TIMEOUT)
         else:
             if self._logger:
                 self._logger.debug("install_tool", "Trying official SH installer (uncaptured)")
-            result = run_process_uncaptured([
+            result = run_process_live([
                 "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
             ], timeout=_TIMEOUT)
         if self._logger:
@@ -180,7 +180,7 @@ class OpenClawTool(Tool):
         # Method 2: npm global install (Node.js already installed)
         if self._logger:
             self._logger.debug("install_tool", "Trying npm install as fallback")
-        result2 = run_process_uncaptured(["npm", "install", "-g", "openclaw@latest"], timeout=_TIMEOUT)
+        result2 = run_process_live(["npm", "install", "-g", "openclaw@latest"], timeout=_TIMEOUT)
         if self._logger:
             self._logger.debug("install_tool", f"npm install: code={result2.return_code} stdout={result2.stdout[-300:]} stderr={result2.stderr[-300:]}")
         if result2.succeeded:

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from aiready.core.models import Prerequisite, Step, StepResult, StepStatus
-from aiready.core.process import run_process_uncaptured
+from aiready.core.process import run_process_live
 from aiready.platforms.base import Platform
 from aiready.tools.base import OnboardingConfig, OnboardingMode, Tool
 
@@ -170,7 +170,7 @@ class ClaudeCodeTool(Tool):
         if dl_result.succeeded:
             if self._logger:
                 self._logger.debug("install_tool", "Running install.cmd (uncaptured to avoid pipe deadlock)")
-            result = run_process_uncaptured(["cmd", "/c", str(tmp / "claude-install.cmd")], timeout=_TIMEOUT)
+            result = run_process_live(["cmd", "/c", str(tmp / "claude-install.cmd")], timeout=_TIMEOUT)
             if self._logger:
                 self._logger.debug("install_tool", f"install.cmd: code={result.return_code} stdout={result.stdout[-300:]} stderr={result.stderr[-300:]}")
             if result.succeeded:
@@ -179,7 +179,7 @@ class ClaudeCodeTool(Tool):
         # Method 2: PowerShell installer (fallback, also uncaptured)
         if self._logger:
             self._logger.debug("install_tool", "Trying PowerShell installer as fallback")
-        result2 = run_process_uncaptured([
+        result2 = run_process_live([
             "powershell", "-ExecutionPolicy", "ByPass", "-Command",
             "irm https://claude.ai/install.ps1 | iex",
         ], timeout=_TIMEOUT)
@@ -191,7 +191,7 @@ class ClaudeCodeTool(Tool):
         # Method 3: npm (deprecated but works)
         if self._logger:
             self._logger.debug("install_tool", "Trying npm install as fallback")
-        result3 = run_process_uncaptured(["npm", "install", "-g", "@anthropic-ai/claude-code"], timeout=_TIMEOUT)
+        result3 = run_process_live(["npm", "install", "-g", "@anthropic-ai/claude-code"], timeout=_TIMEOUT)
         if self._logger:
             self._logger.debug("install_tool", f"npm: code={result3.return_code} stdout={result3.stdout[-300:]} stderr={result3.stderr[-300:]}")
         if result3.succeeded:
@@ -206,7 +206,7 @@ class ClaudeCodeTool(Tool):
         return StepResult(status=StepStatus.FAILED, message="All installation methods failed", detail=detail)
 
     def _install_tool_unix(self, platform: Platform) -> StepResult:
-        result = run_process_uncaptured(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"], timeout=600)
+        result = run_process_live(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"], timeout=600)
         if self._logger:
             self._logger.debug("install_tool", f"install.sh: code={result.return_code} stdout={result.stdout[:300]} stderr={result.stderr[:300]}")
         if result.succeeded:

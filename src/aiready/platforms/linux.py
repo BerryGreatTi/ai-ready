@@ -22,7 +22,7 @@ from aiready.core.models import (
     StepResult,
     StepStatus,
 )
-from aiready.core.process import run_process
+from aiready.core.process import run_process, run_process_live
 from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
 
@@ -94,11 +94,11 @@ class LinuxPlatform(Platform):
             cmd = ["sudo", "pacman", "-Sy", "--noconfirm", "git"]
         else:
             return InstallResult(success=False, error=StepResult(status=StepStatus.FAILED, message="No supported package manager for git"))
-        result = run_process(cmd)
+        result = run_process_live(cmd)
         return InstallResult(success=result.succeeded)
 
     def _install_uv(self) -> InstallResult:
-        result = run_process(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
+        result = run_process_live(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
         if result.succeeded:
             home = os.environ.get("HOME", os.path.expanduser("~"))
             cargo_bin = os.path.join(home, ".cargo", "bin")
@@ -132,7 +132,7 @@ class LinuxPlatform(Platform):
             commands = [["apt-get", "install", "-y", "nodejs"]]
 
         for cmd in commands:
-            result = run_process(cmd)
+            result = run_process_live(cmd)
             if not result.succeeded:
                 return InstallResult(
                     success=False,

@@ -120,7 +120,7 @@ class TestInstallPrerequisite:
         brew_info = CommandInfo(path="/usr/local/bin/brew", version="4.1.0")
         success = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "check_command", return_value=brew_info), patch(
-            "aiready.platforms.macos.run_process", return_value=success
+            "aiready.platforms.macos.run_process_live", return_value=success
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 
@@ -131,7 +131,7 @@ class TestInstallPrerequisite:
         brew_info = CommandInfo(path="/usr/local/bin/brew", version="4.1.0")
         fail = CommandResult(return_code=1, stdout="", stderr="Error: brew install failed")
         with patch.object(platform, "check_command", return_value=brew_info), patch(
-            "aiready.platforms.macos.run_process", return_value=fail
+            "aiready.platforms.macos.run_process_live", return_value=fail
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 
@@ -141,7 +141,7 @@ class TestInstallPrerequisite:
     def test_nodejs_install_without_brew(self, platform, nodejs_prereq):
         success = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "check_command", return_value=None), patch(
-            "aiready.platforms.macos.run_process", return_value=success
+            "aiready.platforms.macos.run_process_live", return_value=success
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 

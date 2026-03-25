@@ -1,11 +1,12 @@
 # src/aiready/core/process.py
-"""Subprocess wrapper with timeout and output capture."""
+"""Subprocess wrapper with timeout, output capture, and live tee mode."""
 
 from __future__ import annotations
 
 import subprocess
-import tempfile
-from pathlib import Path
+import sys
+import threading
+from io import StringIO
 
 from aiready.core.models import CommandResult
 
@@ -15,6 +16,11 @@ def run_process(
     timeout: int = 120,
     cwd: str | None = None,
 ) -> CommandResult:
+    """Run a command and capture stdout/stderr in memory.
+
+    Suitable for short-lived commands that produce small output.
+    For long-running installers, use run_process_live() instead.
+    """
     try:
         result = subprocess.run(
             cmd,
@@ -49,38 +55,76 @@ def run_process(
         )
 
 
-def run_process_uncaptured(
+def _reader_thread(pipe, buffer: StringIO, echo_to) -> None:
+    """Read lines from a pipe, echo to a stream, and collect in buffer."""
+    try:
+        for line in iter(pipe.readline, ""):
+            if echo_to:
+                try:
+                    echo_to.write(line)
+                    echo_to.flush()
+                except Exception:
+                    pass
+            buffer.write(line)
+        pipe.close()
+    except Exception:
+        pass
+
+
+def run_process_live(
     cmd: list[str],
     timeout: int = 600,
     cwd: str | None = None,
 ) -> CommandResult:
-    """Run a command without capturing output (avoids pipe buffer deadlocks).
+    """Run a command with live stdout/stderr output (tee mode).
 
-    Use for long-running installers that produce lots of output.
-    Stdout/stderr are written to temp files and read after completion.
+    Output is printed to the console in real time AND captured for logging.
+    Avoids pipe buffer deadlocks by reading stdout/stderr in separate threads.
+    Use for long-running installers (Git, Node.js, UV, Claude Code, OpenClaw).
     """
-    tmp_dir = Path(tempfile.gettempdir()) / "aiready"
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    stdout_file = tmp_dir / "proc_stdout.log"
-    stderr_file = tmp_dir / "proc_stderr.log"
     try:
-        with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
-            result = subprocess.run(
-                cmd,
-                stdout=out,
-                stderr=err,
-                timeout=timeout,
-                cwd=cwd,
-                stdin=subprocess.DEVNULL,
-            )
-        stdout_text = stdout_file.read_text(encoding="utf-8", errors="replace")[-2000:]
-        stderr_text = stderr_file.read_text(encoding="utf-8", errors="replace")[-2000:]
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            bufsize=1,
+        )
+
+        stdout_buf = StringIO()
+        stderr_buf = StringIO()
+
+        stdout_thread = threading.Thread(
+            target=_reader_thread,
+            args=(proc.stdout, stdout_buf, sys.stdout),
+            daemon=True,
+        )
+        stderr_thread = threading.Thread(
+            target=_reader_thread,
+            args=(proc.stderr, stderr_buf, sys.stderr),
+            daemon=True,
+        )
+
+        stdout_thread.start()
+        stderr_thread.start()
+
+        proc.wait(timeout=timeout)
+        stdout_thread.join(timeout=5)
+        stderr_thread.join(timeout=5)
+
+        stdout_text = stdout_buf.getvalue()[-2000:]
+        stderr_text = stderr_buf.getvalue()[-2000:]
+
         return CommandResult(
-            return_code=result.returncode,
+            return_code=proc.returncode,
             stdout=stdout_text,
             stderr=stderr_text,
         )
     except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
         return CommandResult(
             return_code=-1,
             stdout="",
@@ -98,3 +142,7 @@ def run_process_uncaptured(
             stdout="",
             stderr=str(e),
         )
+
+
+# Backward compatibility alias
+run_process_uncaptured = run_process_live

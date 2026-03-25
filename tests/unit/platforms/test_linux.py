@@ -121,7 +121,7 @@ class TestInstallPrerequisite:
     def test_nodejs_install_success(self, platform, nodejs_prereq):
         success_result = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "_detect_package_manager", return_value="apt-get"), patch(
-            "aiready.platforms.linux.run_process", return_value=success_result
+            "aiready.platforms.linux.run_process_live", return_value=success_result
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 
@@ -131,7 +131,7 @@ class TestInstallPrerequisite:
     def test_nodejs_install_failure(self, platform, nodejs_prereq):
         fail_result = CommandResult(return_code=1, stdout="", stderr="E: Unable to locate package")
         with patch.object(platform, "_detect_package_manager", return_value="apt-get"), patch(
-            "aiready.platforms.linux.run_process", return_value=fail_result
+            "aiready.platforms.linux.run_process_live", return_value=fail_result
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 
@@ -147,7 +147,7 @@ class TestInstallPrerequisite:
     def test_nodejs_with_dnf(self, platform, nodejs_prereq):
         success_result = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "_detect_package_manager", return_value="dnf"), patch(
-            "aiready.platforms.linux.run_process", return_value=success_result
+            "aiready.platforms.linux.run_process_live", return_value=success_result
         ):
             result = platform.install_prerequisite(nodejs_prereq)
 

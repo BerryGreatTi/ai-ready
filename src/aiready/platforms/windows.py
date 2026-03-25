@@ -22,7 +22,7 @@ from aiready.core.models import (
     StepResult,
     StepStatus,
 )
-from aiready.core.process import run_process
+from aiready.core.process import run_process, run_process_live
 from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
 
@@ -114,7 +114,7 @@ class WindowsPlatform(Platform):
     def _install_git(self) -> InstallResult:
         tmp = self.get_temp_dir()
         exe_path = tmp / "git-installer.exe"
-        dl = run_process(["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)], timeout=300)
+        dl = run_process_live(["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)], timeout=300)
         if not dl.succeeded:
             return InstallResult(success=False, error=StepResult(
                 status=StepStatus.FAILED,
@@ -122,7 +122,7 @@ class WindowsPlatform(Platform):
                 detail=f"Return code: {dl.return_code}",
             ))
         # Try with elevation first via PowerShell Start-Process
-        install = run_process([
+        install = run_process_live([
             "powershell", "-Command",
             f'Start-Process "{exe_path}" -ArgumentList "/VERYSILENT","/NORESTART" -Verb RunAs -Wait',
         ], timeout=300)
@@ -130,7 +130,7 @@ class WindowsPlatform(Platform):
             self._refresh_path()
             return InstallResult(success=True)
         # Fallback: try without elevation
-        install2 = run_process([str(exe_path), "/VERYSILENT", "/NORESTART"], timeout=300)
+        install2 = run_process_live([str(exe_path), "/VERYSILENT", "/NORESTART"], timeout=300)
         if install2.succeeded:
             self._refresh_path()
             return InstallResult(success=True)
@@ -141,10 +141,10 @@ class WindowsPlatform(Platform):
         ))
 
     def _install_uv(self) -> InstallResult:
-        result = run_process([
+        result = run_process_live([
             "powershell", "-ExecutionPolicy", "ByPass", "-Command",
             "irm https://astral.sh/uv/install.ps1 | iex",
-        ])
+        ], timeout=300)
         if result.succeeded:
             self._refresh_path()
             return InstallResult(success=True)
@@ -157,7 +157,7 @@ class WindowsPlatform(Platform):
         tmp = self.get_temp_dir()
         msi_path = tmp / "node-latest.msi"
         # Download MSI
-        dl = run_process(["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)], timeout=300)
+        dl = run_process_live(["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)], timeout=300)
         if not dl.succeeded:
             return InstallResult(success=False, error=StepResult(
                 status=StepStatus.FAILED,
@@ -165,7 +165,7 @@ class WindowsPlatform(Platform):
                 detail=f"Return code: {dl.return_code}",
             ))
         # Install MSI - try with elevation via PowerShell Start-Process
-        install = run_process([
+        install = run_process_live([
             "powershell", "-Command",
             f'Start-Process msiexec -ArgumentList "/i","{msi_path}","/qn","/norestart" -Verb RunAs -Wait',
         ], timeout=300)
@@ -173,7 +173,7 @@ class WindowsPlatform(Platform):
             self._refresh_path()
             return InstallResult(success=True)
         # Fallback: try without elevation (might work if user is admin)
-        install2 = run_process(["msiexec", "/i", str(msi_path), "/qn", "/norestart"], timeout=300)
+        install2 = run_process_live(["msiexec", "/i", str(msi_path), "/qn", "/norestart"], timeout=300)
         if install2.succeeded:
             self._refresh_path()
             return InstallResult(success=True)
