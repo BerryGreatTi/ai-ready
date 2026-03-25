@@ -130,16 +130,19 @@ class WindowsPlatform(Platform):
         return result
 
     def _refresh_path(self) -> None:
-        """Refresh PATH from registry for the current process after installs."""
-        query = run_process(["reg", "query", r"HKCU\Environment", "/v", "Path"])
-        user_path = self._extract_reg_value(query.stdout) if query.succeeded else ""
-        query_sys = run_process(["reg", "query", r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment", "/v", "Path"])
-        sys_path = self._extract_reg_value(query_sys.stdout) if query_sys.succeeded else ""
-        # Also add common install locations directly
-        git_dir = r"C:\Program Files\Git\cmd"
-        node_dir = r"C:\Program Files\nodejs"
-        combined = f"{user_path};{sys_path};{git_dir};{node_dir}"
-        os.environ["PATH"] = combined
+        """Refresh PATH by adding known install dirs to the existing PATH."""
+        # Don't replace PATH from registry (contains unexpanded %VAR% on Windows).
+        # Instead, append known install locations to the current process PATH.
+        current = os.environ.get("PATH", "")
+        dirs_to_add = [
+            r"C:\Program Files\Git\cmd",
+            r"C:\Program Files\nodejs",
+            os.path.join(os.environ.get("USERPROFILE", ""), ".local", "bin"),
+        ]
+        for d in dirs_to_add:
+            if d and d not in current:
+                current = f"{d};{current}"
+        os.environ["PATH"] = current
 
     def _run_install_commands(self, commands: list[list[str]]) -> InstallResult:
         for cmd in commands:
