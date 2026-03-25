@@ -55,19 +55,13 @@ class TestOpenClawSteps:
         "verify_prereqs",
         "install_tool",
         "verify_install",
-        "select_provider",
-        "configure_api_key",
-        "validate_api_key",
-        "run_onboarding",
-        "verify_gateway",
-        "run_doctor",
     ]
 
     def test_steps_count(self):
         platform = _make_platform()
         tool = _make_tool(platform)
         steps = tool.get_steps(platform)
-        assert len(steps) == 11
+        assert len(steps) == 5
 
     def test_step_ids(self):
         platform = _make_platform()

@@ -40,6 +40,12 @@ class OpenClawTool(Tool):
         return list(_UNIVERSAL_PREREQS)
 
     def get_steps(self, platform: Platform) -> list[Step]:
+        """Return installation steps only.
+
+        GUI interaction steps (provider selection, API key, onboarding)
+        are handled by the GUI screens after installation completes.
+        See OnboardingConfig for what the GUI should show.
+        """
         steps: list[Step] = [
             Step(
                 id="check_system",
@@ -70,42 +76,6 @@ class OpenClawTool(Tool):
                 name_key="step.verify_install",
                 action=lambda: self._verify_install(platform),
                 required=True,
-            ),
-            Step(
-                id="select_provider",
-                name_key="step.select_provider",
-                action=lambda: self._select_provider(platform),
-                required=True,
-            ),
-            Step(
-                id="configure_api_key",
-                name_key="step.configure_api_key",
-                action=lambda: self._configure_api_key(platform),
-                required=False,
-            ),
-            Step(
-                id="validate_api_key",
-                name_key="step.validate_api_key",
-                action=lambda: self._validate_api_key(platform),
-                required=False,
-            ),
-            Step(
-                id="run_onboarding",
-                name_key="step.run_onboarding",
-                action=lambda: self._run_onboarding(platform),
-                required=True,
-            ),
-            Step(
-                id="verify_gateway",
-                name_key="step.verify_gateway",
-                action=lambda: self._verify_gateway(platform),
-                required=True,
-            ),
-            Step(
-                id="run_doctor",
-                name_key="step.run_doctor",
-                action=lambda: self._run_doctor(platform),
-                required=False,
             ),
         ]
         return steps
