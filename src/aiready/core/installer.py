@@ -30,13 +30,19 @@ class Installer:
 
     def run(self, on_progress: Optional[ProgressCallback] = None) -> InstallResult:
         steps: List[Step] = self._tool.get_steps(self._platform)
+        tool_name = self._tool.get_name()
+        if self._logger:
+            self._logger.debug("installer", f"Starting {tool_name} with {len(steps)} steps")
+            import os
+            self._logger.debug("installer", f"PATH={os.environ.get('PATH', 'NOT SET')}")
         for i, step in enumerate(steps):
             if on_progress:
                 on_progress(i, step, StepResult(status=StepStatus.RUNNING))
             if self._logger:
-                tool_name = self._tool.get_name()
                 self._logger.info(step.id, self._i18n.get(step.name_key, tool=tool_name))
             result = step.action()
+            if self._logger:
+                self._logger.debug(step.id, f"result={result.status.value} message={result.message or ''} detail={result.detail or ''}")
             if on_progress:
                 on_progress(i, step, result)
             if self._logger and result.failed:

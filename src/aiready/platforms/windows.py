@@ -105,15 +105,6 @@ class WindowsPlatform(Platform):
             ),
         )
 
-    def _install_nodejs(self) -> InstallResult:
-        tmp = self.get_temp_dir()
-        msi_path = tmp / "node-latest.msi"
-        commands = [
-            ["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)],
-            ["msiexec", "/i", str(msi_path), "/qn"],
-        ]
-        return self._run_install_commands(commands)
-
     def _install_git(self) -> InstallResult:
         tmp = self.get_temp_dir()
         exe_path = tmp / "git-installer.exe"
@@ -121,7 +112,34 @@ class WindowsPlatform(Platform):
             ["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)],
             [str(exe_path), "/VERYSILENT", "/NORESTART"],
         ]
-        return self._run_install_commands(commands)
+        result = self._run_install_commands(commands)
+        if result.success:
+            self._refresh_path()
+        return result
+
+    def _install_nodejs(self) -> InstallResult:
+        tmp = self.get_temp_dir()
+        msi_path = tmp / "node-latest.msi"
+        commands = [
+            ["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)],
+            ["msiexec", "/i", str(msi_path), "/qn"],
+        ]
+        result = self._run_install_commands(commands)
+        if result.success:
+            self._refresh_path()
+        return result
+
+    def _refresh_path(self) -> None:
+        """Refresh PATH from registry for the current process after installs."""
+        query = run_process(["reg", "query", r"HKCU\Environment", "/v", "Path"])
+        user_path = self._extract_reg_value(query.stdout) if query.succeeded else ""
+        query_sys = run_process(["reg", "query", r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment", "/v", "Path"])
+        sys_path = self._extract_reg_value(query_sys.stdout) if query_sys.succeeded else ""
+        # Also add common install locations directly
+        git_dir = r"C:\Program Files\Git\cmd"
+        node_dir = r"C:\Program Files\nodejs"
+        combined = f"{user_path};{sys_path};{git_dir};{node_dir}"
+        os.environ["PATH"] = combined
 
     def _run_install_commands(self, commands: list[list[str]]) -> InstallResult:
         for cmd in commands:
@@ -142,7 +160,9 @@ class WindowsPlatform(Platform):
     # ------------------------------------------------------------------
 
     def verify_prerequisite(self, prereq: Prerequisite) -> PrereqCheckResult:
-        info = self.check_command(prereq.check_command)
+        # Extract command name from check_command (e.g., "git --version" -> "git")
+        command = prereq.check_command.split()[0]
+        info = self.check_command(command)
         if info is None:
             return PrereqCheckResult(prereq=prereq, installed=False)
 

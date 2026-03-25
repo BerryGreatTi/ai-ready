@@ -39,6 +39,9 @@ class InstallLogger:
         with open(self._path, "a", encoding="utf-8") as f:
             f.write(line)
 
+    def debug(self, step: str, message: str) -> None:
+        self._write("DEBUG", step, message)
+
     def info(self, step: str, message: str) -> None:
         self._write("INFO", step, message)
 

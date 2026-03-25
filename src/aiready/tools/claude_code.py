@@ -108,13 +108,20 @@ class ClaudeCodeTool(Tool):
         for prereq in prereqs:
             # Skip if already installed and version is sufficient
             check = platform.verify_prerequisite(prereq)
+            if self._logger:
+                self._logger.debug("install_prereqs", f"{prereq.name}: installed={check.installed} version={check.current_version} needs_upgrade={check.needs_upgrade}")
             if check.installed and not check.needs_upgrade:
+                if self._logger:
+                    self._logger.debug("install_prereqs", f"Skipping {prereq.name} - already installed")
                 continue
             install_result = platform.install_prerequisite(prereq)
+            if self._logger:
+                self._logger.debug("install_prereqs", f"{prereq.name} install result: success={install_result.success}")
             if not install_result.success:
                 return StepResult(
                     status=StepStatus.FAILED,
                     message=f"Failed to install {prereq.name}",
+                    detail=install_result.error.message if install_result.error else None,
                 )
         return StepResult(status=StepStatus.SUCCESS)
 
@@ -122,10 +129,14 @@ class ClaudeCodeTool(Tool):
         prereqs = self.get_prerequisites(platform)
         for prereq in prereqs:
             check = platform.verify_prerequisite(prereq)
+            if self._logger:
+                import os
+                self._logger.debug("verify_prereqs", f"{prereq.name}: installed={check.installed} version={check.current_version} PATH={os.environ.get('PATH', 'NOT SET')[:200]}")
             if not check.installed:
                 return StepResult(
                     status=StepStatus.FAILED,
                     message=f"{prereq.name} not found",
+                    detail=f"check_command={prereq.check_command}",
                 )
         return StepResult(status=StepStatus.SUCCESS)
 

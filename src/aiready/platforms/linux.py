@@ -118,7 +118,8 @@ class LinuxPlatform(Platform):
     # ------------------------------------------------------------------
 
     def verify_prerequisite(self, prereq: Prerequisite) -> PrereqCheckResult:
-        info = self.check_command(prereq.check_command)
+        command = prereq.check_command.split()[0]
+        info = self.check_command(command)
         if info is None:
             return PrereqCheckResult(prereq=prereq, installed=False)
 
