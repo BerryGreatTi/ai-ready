@@ -130,6 +130,10 @@ class OpenClawTool(Tool):
         return StepResult(status=StepStatus.SUCCESS, message="system check passed")
 
     def _install_prereqs(self, platform: Platform) -> StepResult:
+        # Skip if already installed and version is sufficient
+        check = platform.verify_prerequisite(_NODEJS_PREREQ)
+        if check.installed and not check.needs_upgrade:
+            return StepResult(status=StepStatus.SUCCESS, message="Node.js already installed")
         install_result = platform.install_prerequisite(_NODEJS_PREREQ)
         if install_result.success:
             return StepResult(status=StepStatus.SUCCESS)

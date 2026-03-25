@@ -106,6 +106,10 @@ class ClaudeCodeTool(Tool):
     def _install_prereqs(self, platform: Platform) -> StepResult:
         prereqs = self.get_prerequisites(platform)
         for prereq in prereqs:
+            # Skip if already installed and version is sufficient
+            check = platform.verify_prerequisite(prereq)
+            if check.installed and not check.needs_upgrade:
+                continue
             install_result = platform.install_prerequisite(prereq)
             if not install_result.success:
                 return StepResult(
