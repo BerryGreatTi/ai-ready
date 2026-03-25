@@ -323,7 +323,7 @@ class TestRunCommand:
         with patch("aiready.platforms.windows.run_process", return_value=expected) as mock_rp:
             result = platform.run_command(["dir"])
 
-        mock_rp.assert_called_once_with(["dir"])
+        mock_rp.assert_called_once_with(["dir"], timeout=120)
         assert result == expected
 
     def test_elevated_does_not_prepend_sudo(self, platform):

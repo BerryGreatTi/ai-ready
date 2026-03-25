@@ -262,7 +262,7 @@ class TestRunCommand:
         with patch("aiready.platforms.linux.run_process", return_value=expected) as mock_rp:
             result = platform.run_command(["ls", "-la"])
 
-        mock_rp.assert_called_once_with(["ls", "-la"])
+        mock_rp.assert_called_once_with(["ls", "-la"], timeout=120)
         assert result == expected
 
     def test_elevated_prepends_sudo(self, platform):
@@ -270,7 +270,7 @@ class TestRunCommand:
         with patch("aiready.platforms.linux.run_process", return_value=expected) as mock_rp:
             platform.run_command(["apt-get", "install", "node"], elevated=True)
 
-        mock_rp.assert_called_once_with(["sudo", "apt-get", "install", "node"])
+        mock_rp.assert_called_once_with(["sudo", "apt-get", "install", "node"], timeout=120)
 
 
 # ---------------------------------------------------------------------------

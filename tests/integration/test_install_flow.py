@@ -46,7 +46,7 @@ class MockPlatform(Platform):
     def request_elevation(self, reason_key: str) -> bool:
         return True
 
-    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+    def run_command(self, cmd: list[str], elevated: bool = False, timeout: int = 120) -> CommandResult:
         return CommandResult(return_code=0, stdout="OK", stderr="")
 
     def get_temp_dir(self) -> Path:
@@ -65,7 +65,7 @@ class FailingCheckSystemPlatform(MockPlatform):
     def __init__(self) -> None:
         self._call_count = 0
 
-    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+    def run_command(self, cmd: list[str], elevated: bool = False, timeout: int = 120) -> CommandResult:
         # First call is check_system - make it succeed but we simulate failure
         # by making check_command return None for the verify step
         return CommandResult(return_code=1, stdout="", stderr="system check failed")
@@ -145,7 +145,7 @@ class TestFlowAbortOnFailure:
         """When check_system fails and is required, installation aborts early."""
 
         class SystemCheckFailPlatform(MockPlatform):
-            def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+            def run_command(self, cmd: list[str], elevated: bool = False, timeout: int = 120) -> CommandResult:
                 # Fail all run_command calls to ensure check_system fails
                 return CommandResult(return_code=1, stdout="", stderr="error")
 

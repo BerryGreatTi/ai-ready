@@ -290,9 +290,9 @@ class WindowsPlatform(Platform):
     # run_command
     # ------------------------------------------------------------------
 
-    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+    def run_command(self, cmd: list[str], elevated: bool = False, timeout: int = 120) -> CommandResult:
         # Windows does not use sudo; elevation is handled by UAC / runas
-        return run_process(cmd)
+        return run_process(cmd, timeout=timeout)
 
     # ------------------------------------------------------------------
     # get_temp_dir

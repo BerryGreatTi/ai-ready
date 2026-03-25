@@ -202,9 +202,9 @@ class LinuxPlatform(Platform):
     # run_command
     # ------------------------------------------------------------------
 
-    def run_command(self, cmd: list[str], elevated: bool = False) -> CommandResult:
+    def run_command(self, cmd: list[str], elevated: bool = False, timeout: int = 120) -> CommandResult:
         actual_cmd = (["sudo"] + cmd) if elevated else cmd
-        return run_process(actual_cmd)
+        return run_process(actual_cmd, timeout=timeout)
 
     # ------------------------------------------------------------------
     # get_temp_dir

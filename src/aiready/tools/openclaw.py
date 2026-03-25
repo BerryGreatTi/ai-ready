@@ -165,19 +165,17 @@ class OpenClawTool(Tool):
             result = platform.run_command([
                 "powershell", "-Command",
                 "iwr -useb https://openclaw.ai/install.ps1 | iex",
-            ])
+            ], timeout=600)
         else:
-            # macOS/Linux: official installer script
             result = platform.run_command([
                 "bash", "-c", "curl -fsSL https://openclaw.ai/install.sh | bash",
-            ])
+            ], timeout=600)
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message=result.stderr or "Official installer failed")
 
     def _install_tool_fallback(self, platform: Platform) -> StepResult:
-        # Fallback: npm global install (Node.js is already installed at this point)
-        result = platform.run_command(["npm", "install", "-g", "openclaw@latest"])
+        result = platform.run_command(["npm", "install", "-g", "openclaw@latest"], timeout=600)
         if result.succeeded:
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message=result.stderr or "npm fallback failed")
