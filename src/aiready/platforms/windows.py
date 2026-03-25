@@ -33,11 +33,11 @@ _KNOWN_PATHS: dict[str, list[str]] = {
     "uv": [],  # dynamic path added at runtime via USERPROFILE
 }
 
-# Node.js MSI download URL (LTS)
-_NODEJS_MSI_URL = "https://nodejs.org/dist/latest-v20.x/node-v20.11.1-x64.msi"
+# Node.js MSI download URL (LTS v24)
+_NODEJS_MSI_URL = "https://nodejs.org/dist/v24.14.0/node-v24.14.0-x64.msi"
 
-# Git installer download URL
-_GIT_EXE_URL = "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe"
+# Git installer download URL (latest)
+_GIT_EXE_URL = "https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.2/Git-2.53.0.2-64-bit.exe"
 
 
 class WindowsPlatform(Platform):

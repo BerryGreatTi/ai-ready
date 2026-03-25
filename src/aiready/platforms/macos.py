@@ -26,7 +26,7 @@ from aiready.core.version import version_gte
 from aiready.platforms.base import Platform
 
 # Download URL for Node.js macOS installer (.pkg)
-_NODEJS_PKG_URL = "https://nodejs.org/dist/latest/node-latest.pkg"
+_NODEJS_PKG_URL = "https://nodejs.org/dist/v24.14.0/node-v24.14.0.pkg"
 
 
 class MacOSPlatform(Platform):

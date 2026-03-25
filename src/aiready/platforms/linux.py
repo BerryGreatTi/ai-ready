@@ -115,7 +115,7 @@ class LinuxPlatform(Platform):
         pkg_manager = self._detect_package_manager()
         if pkg_manager == "apt-get":
             commands = [
-                ["curl", "-fsSL", "https://deb.nodesource.com/setup_lts.x", "-o", "/tmp/nodesource_setup.sh"],
+                ["curl", "-fsSL", "https://deb.nodesource.com/setup_24.x", "-o", "/tmp/nodesource_setup.sh"],
                 ["bash", "/tmp/nodesource_setup.sh"],
                 ["apt-get", "install", "-y", "nodejs"],
             ]
