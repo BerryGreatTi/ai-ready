@@ -114,14 +114,31 @@ class WindowsPlatform(Platform):
     def _install_git(self) -> InstallResult:
         tmp = self.get_temp_dir()
         exe_path = tmp / "git-installer.exe"
-        commands = [
-            ["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)],
-            [str(exe_path), "/VERYSILENT", "/NORESTART"],
-        ]
-        result = self._run_install_commands(commands)
-        if result.success:
+        dl = run_process(["curl", "-fsSL", _GIT_EXE_URL, "-o", str(exe_path)], timeout=300)
+        if not dl.succeeded:
+            return InstallResult(success=False, error=StepResult(
+                status=StepStatus.FAILED,
+                message=dl.stderr or "Failed to download Git",
+                detail=f"Return code: {dl.return_code}",
+            ))
+        # Try with elevation first via PowerShell Start-Process
+        install = run_process([
+            "powershell", "-Command",
+            f'Start-Process "{exe_path}" -ArgumentList "/VERYSILENT","/NORESTART" -Verb RunAs -Wait',
+        ], timeout=300)
+        if install.succeeded:
             self._refresh_path()
-        return result
+            return InstallResult(success=True)
+        # Fallback: try without elevation
+        install2 = run_process([str(exe_path), "/VERYSILENT", "/NORESTART"], timeout=300)
+        if install2.succeeded:
+            self._refresh_path()
+            return InstallResult(success=True)
+        return InstallResult(success=False, error=StepResult(
+            status=StepStatus.FAILED,
+            message=f"Git install failed (code {install2.return_code})",
+            detail=f"Stderr: {install2.stderr[:300]}",
+        ))
 
     def _install_uv(self) -> InstallResult:
         result = run_process([
@@ -139,14 +156,32 @@ class WindowsPlatform(Platform):
     def _install_nodejs(self) -> InstallResult:
         tmp = self.get_temp_dir()
         msi_path = tmp / "node-latest.msi"
-        commands = [
-            ["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)],
-            ["msiexec", "/i", str(msi_path), "/qn"],
-        ]
-        result = self._run_install_commands(commands)
-        if result.success:
+        # Download MSI
+        dl = run_process(["curl", "-fsSL", _NODEJS_MSI_URL, "-o", str(msi_path)], timeout=300)
+        if not dl.succeeded:
+            return InstallResult(success=False, error=StepResult(
+                status=StepStatus.FAILED,
+                message=dl.stderr or f"Failed to download Node.js from {_NODEJS_MSI_URL}",
+                detail=f"Return code: {dl.return_code}",
+            ))
+        # Install MSI - try with elevation via PowerShell Start-Process
+        install = run_process([
+            "powershell", "-Command",
+            f'Start-Process msiexec -ArgumentList "/i","{msi_path}","/qn","/norestart" -Verb RunAs -Wait',
+        ], timeout=300)
+        if install.succeeded:
             self._refresh_path()
-        return result
+            return InstallResult(success=True)
+        # Fallback: try without elevation (might work if user is admin)
+        install2 = run_process(["msiexec", "/i", str(msi_path), "/qn", "/norestart"], timeout=300)
+        if install2.succeeded:
+            self._refresh_path()
+            return InstallResult(success=True)
+        return InstallResult(success=False, error=StepResult(
+            status=StepStatus.FAILED,
+            message=f"Node.js MSI install failed (code {install2.return_code}). Admin permission may be required.",
+            detail=f"Command: msiexec /i {msi_path} /qn\nReturn code: {install2.return_code}\nStderr: {install2.stderr[:300]}",
+        ))
 
     def _refresh_path(self) -> None:
         """Refresh PATH by adding known install dirs to the existing PATH."""
