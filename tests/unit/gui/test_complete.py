@@ -1,11 +1,48 @@
-"""Tests for launch_in_terminal logic in CompleteScreen."""
+"""Tests for launch_in_terminal and resolve_command logic in CompleteScreen."""
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aiready.gui.screens.complete import _launch_in_terminal, _launch_in_linux_terminal
+from aiready.gui.screens.complete import (
+    _launch_in_terminal, _launch_in_linux_terminal,
+    _resolve_command, _display_command,
+)
+
+
+class TestResolveCommand:
+    @patch("aiready.gui.screens.complete.shutil.which")
+    def test_resolves_claude_to_absolute_path(self, mock_which):
+        mock_which.return_value = "/usr/local/bin/claude"
+
+        result = _resolve_command("claude_code")
+
+        assert '"/usr/local/bin/claude"' in result
+        mock_which.assert_called_once_with("claude")
+
+    @patch("aiready.gui.screens.complete.shutil.which")
+    def test_resolves_openclaw_with_onboard_arg(self, mock_which):
+        mock_which.return_value = "/home/user/.local/bin/openclaw"
+
+        result = _resolve_command("openclaw")
+
+        assert '"/home/user/.local/bin/openclaw"' in result
+        assert result.endswith("onboard")
+
+    @patch("aiready.gui.screens.complete.shutil.which")
+    def test_falls_back_to_binary_name_when_not_found(self, mock_which):
+        mock_which.return_value = None
+
+        result = _resolve_command("claude_code")
+
+        assert result == "claude"
+
+    def test_display_command_claude(self):
+        assert _display_command("claude_code") == "claude"
+
+    def test_display_command_openclaw(self):
+        assert _display_command("openclaw") == "openclaw onboard"
 
 
 class TestLaunchInTerminal:
@@ -89,7 +126,6 @@ class TestLaunchInLinuxTerminal:
     @patch("aiready.gui.screens.complete.subprocess")
     @patch("aiready.gui.screens.complete.shutil")
     def test_falls_back_to_next_terminal(self, mock_shutil, mock_subprocess):
-        # gnome-terminal not found, konsole found
         mock_shutil.which.side_effect = [None, "/usr/bin/konsole"]
 
         _launch_in_linux_terminal("claude")
@@ -104,9 +140,9 @@ class TestLaunchInLinuxTerminal:
     def test_command_included_in_terminal_args(self, mock_shutil, mock_subprocess):
         mock_shutil.which.return_value = "/usr/bin/gnome-terminal"
 
-        _launch_in_linux_terminal("openclaw")
+        _launch_in_linux_terminal("openclaw onboard")
 
         first_call = mock_subprocess.Popen.call_args_list[0]
         cmd = first_call[0][0]
         cmd_str = " ".join(cmd)
-        assert "openclaw" in cmd_str
+        assert "openclaw onboard" in cmd_str
