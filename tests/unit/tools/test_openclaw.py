@@ -106,15 +106,15 @@ class TestOpenClawOnboarding:
         config = tool.get_onboarding_config()
         assert config.mode == OnboardingMode.AUTOMATIC
 
-    def test_onboarding_has_provider_selection(self):
+    def test_onboarding_no_provider_selection(self):
         tool = _make_tool()
         config = tool.get_onboarding_config()
-        assert config.provider_selection is True
+        assert config.provider_selection is False
 
-    def test_onboarding_has_api_key_input(self):
+    def test_onboarding_no_api_key_input(self):
         tool = _make_tool()
         config = tool.get_onboarding_config()
-        assert config.api_key_input is True
+        assert config.api_key_input is False
 
 
 class TestOpenClawVerifyCommands:

@@ -84,11 +84,7 @@ class OpenClawTool(Tool):
         return ["openclaw --version", "openclaw doctor", "openclaw gateway status"]
 
     def get_onboarding_config(self) -> OnboardingConfig:
-        return OnboardingConfig(
-            mode=OnboardingMode.AUTOMATIC,
-            provider_selection=True,
-            api_key_input=True,
-        )
+        return OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
 
     # -- private step implementations --
 

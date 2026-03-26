@@ -140,14 +140,8 @@ class ProgressScreen(ctk.CTkFrame):
         if result.success:
             self._progress.set(1.0)
             self._status_text.configure(text="")
-            # Navigate to next screen based on onboarding config
-            onboarding = self._tool.get_onboarding_config()
-            if onboarding.provider_selection:
-                from aiready.gui.screens.provider_select import ProviderSelectScreen
-                self.app.show_screen(ProviderSelectScreen)
-            else:
-                from aiready.gui.screens.complete import CompleteScreen
-                self.app.show_screen(CompleteScreen)
+            from aiready.gui.screens.complete import CompleteScreen
+            self.app.show_screen(CompleteScreen)
         else:
             self._error_msg.configure(text=result.error.message if result.error else "Unknown error")
             self._error_frame.pack(pady=10)
