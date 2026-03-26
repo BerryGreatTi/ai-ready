@@ -165,14 +165,16 @@ class CompleteScreen(ctk.CTkFrame):
             command=app.destroy,
         ).pack()
 
-        # Auto-launch
-        self.after(500, self._launch_tool)
+        # Auto-launch (once only)
+        self.after(500, self._auto_launch)
 
     def _copy_to_clipboard(self, text: str):
         self.clipboard_clear()
         self.clipboard_append(text)
 
+    def _auto_launch(self):
+        if not self._launched:
+            self._launched = _launch_in_terminal(self._launch_command)
+
     def _launch_tool(self):
-        if self._launched:
-            return
-        self._launched = _launch_in_terminal(self._launch_command)
+        _launch_in_terminal(self._launch_command)
