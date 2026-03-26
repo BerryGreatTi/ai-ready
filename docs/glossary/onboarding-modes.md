@@ -1,19 +1,19 @@
 # Onboarding Modes
 
-The two modes that define how AIReady handles post-installation setup for each tool.
+How AIReady handles post-installation setup for each tool.
 
-## AUTOMATIC (C)
+## CLI Handoff (current)
 
-The installer handles everything programmatically. The user provides input (e.g., API key) through the GUI/script, and the installer executes all onboarding commands.
+After installation and PATH setup, the GUI opens a new terminal and launches the tool's CLI directly. The CLI handles its own first-run experience (authentication, provider selection, API key input, daemon setup).
 
-**Used by:** OpenClaw -- API key can be set via environment variable, onboarding command can be run non-interactively.
+- **Claude Code**: Terminal runs `claude`, which starts interactive auth on first launch.
+- **OpenClaw**: Terminal runs `openclaw onboard`, which handles provider selection, API key, and daemon setup interactively.
 
-## GUIDED (B)
+The GUI resolves the binary to an absolute path (via `shutil.which`) before launching, because the new terminal may not have the updated PATH yet.
 
-The installer cannot fully automate the process because it requires external interaction (e.g., browser-based OAuth). Instead, the installer:
-1. Opens the required external tool (browser, website)
-2. Displays step-by-step instructions in the UI
-3. Waits for the user to confirm completion
-4. Verifies the result programmatically
+See [ADR-0010](../decisions/ADR-0010-cli-handoff-onboarding.md) for the decision rationale.
 
-**Used by:** Claude Code -- authentication requires browser-based OAuth flow that cannot be intercepted programmatically.
+## Historical modes (removed)
+
+- **GUIDED**: Used for Claude Code browser-based OAuth. Removed in v0.1.0-rc21 because the CLI handles auth better.
+- **AUTOMATIC**: Used for OpenClaw GUI-based provider/API key input. Removed in v0.1.0-rc22 because `openclaw onboard` provides a richer interactive experience.

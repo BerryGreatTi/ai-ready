@@ -34,3 +34,9 @@ The success message instructs the user to open a new terminal window, making the
 - **Session-only PATH**: Rejected. Beginners cannot troubleshoot "command not found" after reopening terminal.
 - **Modifying /etc/paths.d/**: Requires root/sudo. Rejected for being too invasive.
 - **Instructing user to add PATH manually**: Rejected. Target audience cannot follow manual shell config instructions.
+
+## Revision (2026-03-27)
+
+The GUI installer now also calls `platform.add_to_path()` after `_verify_install` succeeds. Previously, only the shell scripts (`.sh`, `.bat`) performed permanent PATH setup. The GUI modified `os.environ["PATH"]` for the process only, which meant a new terminal opened after the GUI exited could not find the installed tool.
+
+The fix: after `check_command()` locates the binary, its parent directory is passed to `platform.add_to_path()`, which writes to `~/.zshrc`/`~/.bashrc` (Linux/macOS) or `HKCU\Environment\Path` registry (Windows). This ensures the tool is findable in any new terminal session.

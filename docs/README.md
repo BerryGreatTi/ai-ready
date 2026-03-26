@@ -32,6 +32,8 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | [ADR-0006](decisions/ADR-0006-permanent-path-setup.md) | Permanent PATH setup in shell config | Accepted |
 | [ADR-0007](decisions/ADR-0007-universal-prerequisites.md) | Universal prerequisites (Git, Node.js, UV) for all tools | Accepted |
 | [ADR-0008](decisions/ADR-0008-windows-installer-lessons.md) | Windows installer lessons learned (rc1-rc15) | Accepted |
+| [ADR-0009](decisions/ADR-0009-remove-doctor-step.md) | Remove `claude doctor` step (TTY hang) | Accepted |
+| [ADR-0010](decisions/ADR-0010-cli-handoff-onboarding.md) | Hand off auth/onboarding to CLI | Accepted |
 
 ## Specs Index
 
@@ -59,7 +61,7 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | [Platform Interface](glossary/platform-interface.md) | Abstract OS abstraction layer |
 | [Tool Interface](glossary/tool-interface.md) | Abstract tool installation definition |
 | [Step](glossary/step.md) | Immutable unit of work in installation process |
-| [Onboarding Modes](glossary/onboarding-modes.md) | AUTOMATIC (C) vs GUIDED (B) post-install setup |
+| [Onboarding Modes](glossary/onboarding-modes.md) | CLI handoff model for post-install onboarding |
 | [Native Installer](glossary/native-installer.md) | Claude Code's zero-dependency installation method |
 
 ## Reading Order

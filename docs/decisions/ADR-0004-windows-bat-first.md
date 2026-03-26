@@ -42,3 +42,9 @@ Use BAT (cmd.exe) as the **primary** script format for Windows. PowerShell (.ps1
 - **PS1 only**: Cleaner syntax, better tooling, but Korean encoding issues make it unreliable for the target audience.
 - **PS1 with UTF-8 BOM**: Partially mitigates encoding issues, but does not solve them on all PowerShell 5.1 versions.
 - **Python CLI executable**: Would work but defeats the purpose of having a lightweight script option.
+
+## Revision (2026-03-27)
+
+This ADR remains in effect for **standalone scripts** in `scripts/windows/`. However, the **GUI installer** (`src/aiready/tools/claude_code.py`) now uses PowerShell as the primary installation method, with CMD as fallback. This aligns with Anthropic's official recommendation (`irm https://claude.ai/install.ps1 | iex` is the documented primary command).
+
+The GUI's install order: PS1 -> CMD -> npm. The rationale: the GUI runs in a controlled subprocess environment where the Korean cp949 encoding issue does not affect the `irm ... | iex` one-liner (the issue is with script *files* containing Korean comments, not with inline commands).
