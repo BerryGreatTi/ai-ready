@@ -1,6 +1,7 @@
 """Claude Code tool definition."""
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Optional
 
 from aiready.core.models import Prerequisite, Step, StepResult, StepStatus
@@ -123,7 +124,6 @@ class ClaudeCodeTool(Tool):
         for prereq in prereqs:
             check = platform.verify_prerequisite(prereq)
             if self._logger:
-                import os
                 self._logger.debug("verify_prereqs", f"{prereq.name}: installed={check.installed} version={check.current_version} PATH={os.environ.get('PATH', 'NOT SET')[:200]}")
             if not check.installed:
                 return StepResult(

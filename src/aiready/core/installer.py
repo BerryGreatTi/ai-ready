@@ -1,6 +1,7 @@
 """Installation orchestration engine."""
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Callable, List, Optional
 
 from aiready.core.models import InstallResult, Step, StepResult, StepStatus
@@ -33,7 +34,6 @@ class Installer:
         tool_name = self._tool.get_name()
         if self._logger:
             self._logger.debug("installer", f"Starting {tool_name} with {len(steps)} steps")
-            import os
             self._logger.debug("installer", f"PATH={os.environ.get('PATH', 'NOT SET')}")
         for i, step in enumerate(steps):
             if on_progress:

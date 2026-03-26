@@ -22,8 +22,6 @@ class ProgressScreen(ctk.CTkFrame):
         self.app = app
         self._step_labels = []
         self._step_statuses = []
-        self._failed = False
-        self._failed_step_index = -1
 
         # Create tool
         if app.selected_tool == "claude_code":
@@ -33,7 +31,6 @@ class ProgressScreen(ctk.CTkFrame):
 
         # Get steps for display
         self._steps = self._tool.get_steps(app.platform)
-        total = len(self._steps)
 
         # Title
         tool_name = self._tool.get_name()
@@ -102,7 +99,6 @@ class ProgressScreen(ctk.CTkFrame):
         self._start_install()
 
     def _start_install(self):
-        self._failed = False
         self._error_frame.pack_forget()
         installer = Installer(
             platform=self.app.platform,
@@ -131,8 +127,6 @@ class ProgressScreen(ctk.CTkFrame):
             self._progress.set((index + 1) / total)
         elif result.status == StepStatus.FAILED:
             self._step_statuses[index].configure(text="✗", text_color=COLOR_ERROR)
-            self._failed = True
-            self._failed_step_index = index
         elif result.status == StepStatus.SKIPPED:
             self._step_statuses[index].configure(text="–", text_color="gray")
 

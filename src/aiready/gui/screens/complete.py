@@ -1,6 +1,7 @@
 """Installation complete screen."""
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 
@@ -25,9 +26,10 @@ def _launch_in_terminal(command: str) -> bool:
                 "powershell", "-NoExit", "-Command", command,
             ], creationflags=subprocess.CREATE_NEW_CONSOLE)
         elif sys.platform == "darwin":
+            escaped = command.replace('\\', '\\\\').replace('"', '\\"')
             apple_script = (
                 f'tell application "Terminal"\n'
-                f'  do script "{command}"\n'
+                f'  do script "{escaped}"\n'
                 f'  activate\n'
                 f'end tell'
             )
@@ -47,7 +49,9 @@ def _launch_in_linux_terminal(command: str) -> None:
         ("xfce4-terminal", ["xfce4-terminal", "-e", f"bash -c '{command}; exec bash'"]),
         ("xterm", ["xterm", "-e", f"bash -c '{command}; exec bash'"]),
     ]
-    for _name, cmd in terminals:
+    for name, cmd in terminals:
+        if shutil.which(name) is None:
+            continue
         try:
             subprocess.Popen(cmd)
             return
@@ -59,6 +63,7 @@ class CompleteScreen(ctk.CTkFrame):
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, fg_color="transparent")
         self.app = app
+        self._launched = False
 
         tool_id = app.selected_tool or ""
         self._command = _TOOL_COMMANDS.get(tool_id, tool_id)
@@ -146,4 +151,6 @@ class CompleteScreen(ctk.CTkFrame):
         self.clipboard_append(text)
 
     def _launch_tool(self):
-        _launch_in_terminal(self._command)
+        if self._launched:
+            return
+        self._launched = _launch_in_terminal(self._command)

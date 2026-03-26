@@ -89,10 +89,11 @@ class OpenClawTool(Tool):
     # -- private step implementations --
 
     def _check_system(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["node", "--version"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.SUCCESS, message="system check passed")
+        os_info = platform.get_os_info()
+        return StepResult(
+            status=StepStatus.SUCCESS,
+            message=f"{os_info.system} {os_info.release}",
+        )
 
     def _install_prereqs(self, platform: Platform) -> StepResult:
         prereqs = self.get_prerequisites(platform)
@@ -171,31 +172,33 @@ class OpenClawTool(Tool):
     def _refresh_path_for_openclaw(self, platform: Platform) -> None:
         """Add common openclaw install locations to current PATH."""
         import os
-        current = os.environ.get("PATH", "")
         home = os.environ.get("USERPROFILE", os.environ.get("HOME", ""))
-        dirs = [
+        self._prepend_to_path([
             os.path.join(home, ".local", "bin"),
             os.path.join(home, ".openclaw", "bin"),
             os.path.join(home, "AppData", "Roaming", "npm"),
             os.path.join(home, ".npm-global", "bin"),
-        ]
-        for d in dirs:
-            if d and d not in current and os.path.isdir(d):
-                current = f"{d}{os.pathsep}{current}"
-        os.environ["PATH"] = current
+        ])
 
     def _refresh_path_for_npm(self, platform: Platform) -> None:
         """Ensure npm is findable in PATH."""
         import os
-        current = os.environ.get("PATH", "")
-        npm_dirs = [
+        self._prepend_to_path([
             r"C:\Program Files\nodejs",
             os.path.join(os.environ.get("USERPROFILE", ""), "AppData", "Roaming", "npm"),
             "/usr/local/bin",
-        ]
-        for d in npm_dirs:
-            if d and d not in current and os.path.isdir(d):
+        ])
+
+    @staticmethod
+    def _prepend_to_path(dirs: list[str]) -> None:
+        """Prepend directories to PATH if they exist and are not already present."""
+        import os
+        entries = set(os.environ.get("PATH", "").split(os.pathsep))
+        current = os.environ.get("PATH", "")
+        for d in dirs:
+            if d and d not in entries and os.path.isdir(d):
                 current = f"{d}{os.pathsep}{current}"
+                entries.add(d)
         os.environ["PATH"] = current
 
     def _verify_install(self, platform: Platform) -> StepResult:
