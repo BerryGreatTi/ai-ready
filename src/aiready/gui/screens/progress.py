@@ -145,9 +145,6 @@ class ProgressScreen(ctk.CTkFrame):
             if onboarding.provider_selection:
                 from aiready.gui.screens.provider_select import ProviderSelectScreen
                 self.app.show_screen(ProviderSelectScreen)
-            elif onboarding.mode.value == "guided":
-                from aiready.gui.screens.onboarding import OnboardingScreen
-                self.app.show_screen(OnboardingScreen)
             else:
                 from aiready.gui.screens.complete import CompleteScreen
                 self.app.show_screen(CompleteScreen)

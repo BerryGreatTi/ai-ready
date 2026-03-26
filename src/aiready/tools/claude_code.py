@@ -70,18 +70,6 @@ class ClaudeCodeTool(Tool):
                 action=lambda: self._verify_install(platform),
                 required=True,
             ),
-            Step(
-                id="authenticate",
-                name_key="step.authenticate",
-                action=lambda: self._authenticate(platform),
-                required=True,
-            ),
-            Step(
-                id="verify_auth",
-                name_key="step.verify_auth",
-                action=lambda: self._verify_auth(platform),
-                required=True,
-            ),
         ]
         return steps
 
@@ -89,7 +77,7 @@ class ClaudeCodeTool(Tool):
         return ["claude --version"]
 
     def get_onboarding_config(self) -> OnboardingConfig:
-        return OnboardingConfig(mode=OnboardingMode.GUIDED)
+        return OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
 
     # -- private step implementations --
 
@@ -216,13 +204,3 @@ class ClaudeCodeTool(Tool):
         if info is not None:
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message="claude command not found")
-
-    def _authenticate(self, platform: Platform) -> StepResult:
-        platform.open_browser("https://claude.ai/login")
-        return StepResult(status=StepStatus.SUCCESS)
-
-    def _verify_auth(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["claude", "--version"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message="Authentication verification failed")

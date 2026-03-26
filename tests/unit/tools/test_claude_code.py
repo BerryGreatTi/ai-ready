@@ -55,15 +55,13 @@ class TestClaudeCodeSteps:
         "verify_prereqs",
         "install_tool",
         "verify_install",
-        "authenticate",
-        "verify_auth",
     ]
 
     def test_steps_count(self):
         platform = _make_platform()
         tool = _make_tool(platform)
         steps = tool.get_steps(platform)
-        assert len(steps) == 7
+        assert len(steps) == 5
 
     def test_step_ids(self):
         platform = _make_platform()
@@ -96,10 +94,10 @@ class TestClaudeCodeSteps:
 
 
 class TestClaudeCodeOnboarding:
-    def test_onboarding_is_guided(self):
+    def test_onboarding_is_automatic(self):
         tool = _make_tool()
         config = tool.get_onboarding_config()
-        assert config.mode == OnboardingMode.GUIDED
+        assert config.mode == OnboardingMode.AUTOMATIC
 
     def test_onboarding_no_provider_selection(self):
         tool = _make_tool()
