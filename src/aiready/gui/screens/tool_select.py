@@ -20,7 +20,7 @@ class ToolSelectScreen(ctk.CTkFrame):
         ctk.CTkLabel(
             self, text=app.i18n.get("tool.select.title"),
             font=FONT_TITLE,
-        ).pack(pady=(36, 24))
+        ).pack(pady=(28, 18))
 
         # Cards
         for tool_id in ("claude_code", "openclaw"):

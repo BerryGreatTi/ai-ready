@@ -16,7 +16,7 @@ from aiready.gui.theme import (
 
 _TOOL_COMMANDS: dict[str, str] = {
     "claude_code": "claude",
-    "openclaw": "openclaw",
+    "openclaw": "openclaw onboard",
 }
 
 
@@ -73,7 +73,7 @@ class CompleteScreen(ctk.CTkFrame):
         # Center content
         self.pack_propagate(False)
         center = ctk.CTkFrame(self, fg_color="transparent")
-        center.place(relx=0.5, rely=0.38, anchor="center")
+        center.place(relx=0.5, rely=0.40, anchor="center")
 
         # Success icon
         ctk.CTkLabel(

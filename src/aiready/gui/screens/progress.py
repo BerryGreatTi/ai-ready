@@ -38,7 +38,7 @@ class ProgressScreen(ctk.CTkFrame):
         ctk.CTkLabel(
             self, text=f"{app.i18n.get('progress.title')}",
             font=FONT_TITLE,
-        ).pack(pady=(30, 4))
+        ).pack(pady=(24, 4))
 
         ctk.CTkLabel(
             self, text=tool_name,

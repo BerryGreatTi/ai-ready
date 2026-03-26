@@ -16,7 +16,7 @@ class LanguageSelectScreen(ctk.CTkFrame):
         # Center content vertically
         self.pack_propagate(False)
         center = ctk.CTkFrame(self, fg_color="transparent")
-        center.place(relx=0.5, rely=0.42, anchor="center")
+        center.place(relx=0.5, rely=0.40, anchor="center")
 
         # Brand
         ctk.CTkLabel(
@@ -26,7 +26,7 @@ class LanguageSelectScreen(ctk.CTkFrame):
         ctk.CTkLabel(
             center, text="AI Tool Setup Helper",
             font=FONT_SUBTITLE, text_color=COLOR_MUTED,
-        ).pack(pady=(0, 50))
+        ).pack(pady=(0, 36))
 
         # Language prompt
         ctk.CTkLabel(
