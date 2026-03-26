@@ -61,7 +61,7 @@ class TestLaunchInTerminal:
         assert cmd[0] == "powershell"
         assert "-NoExit" in cmd
         assert "-Command" in cmd
-        assert "claude" in cmd
+        assert cmd[3] == "& claude"
 
     @patch("aiready.gui.screens.complete.sys")
     @patch("aiready.gui.screens.complete.subprocess")

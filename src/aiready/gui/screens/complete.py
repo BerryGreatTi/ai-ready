@@ -47,7 +47,7 @@ def _launch_in_terminal(command: str) -> bool:
     try:
         if sys.platform == "win32":
             subprocess.Popen([
-                "powershell", "-NoExit", "-Command", command,
+                "powershell", "-NoExit", "-Command", f"& {command}",
             ], creationflags=subprocess.CREATE_NEW_CONSOLE)
         elif sys.platform == "darwin":
             escaped = command.replace('\\', '\\\\').replace('"', '\\"')
