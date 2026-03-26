@@ -12,14 +12,11 @@ from aiready.platforms.base import Platform
 
 class OnboardingMode(Enum):
     AUTOMATIC = "automatic"
-    GUIDED = "guided"
 
 
 @dataclass(frozen=True)
 class OnboardingConfig:
     mode: OnboardingMode
-    provider_selection: bool = False
-    api_key_input: bool = False
 
 
 class Tool(ABC):

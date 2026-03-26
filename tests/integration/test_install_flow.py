@@ -192,7 +192,7 @@ class TestFlowAbortOnFailure:
                 return []
 
             def get_onboarding_config(self):
-                return OnboardingConfig(mode=OnboardingMode.GUIDED)
+                return OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
 
         tool = AbortingTool()
         installer = Installer(platform=platform, tool=tool, i18n=i18n)
@@ -242,7 +242,7 @@ class TestFlowAbortOnFailure:
                 return []
 
             def get_onboarding_config(self):
-                return OnboardingConfig(mode=OnboardingMode.GUIDED)
+                return OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
 
         platform = MockPlatform()
         i18n = _make_i18n()

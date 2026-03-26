@@ -16,8 +16,6 @@ class AIReadyApp(ctk.CTk):
         self.logger = InstallLogger()
         self.preset_tool = preset_tool
         self.selected_tool = None
-        self.selected_provider = None
-        self.api_key = None
         self._current_screen = None
 
         # Window setup

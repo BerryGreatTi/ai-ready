@@ -204,29 +204,3 @@ class OpenClawTool(Tool):
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message="openclaw command not found")
 
-    def _select_provider(self, platform: Platform) -> StepResult:
-        return StepResult(status=StepStatus.SUCCESS, message="Provider selection deferred to GUI")
-
-    def _configure_api_key(self, platform: Platform) -> StepResult:
-        return StepResult(status=StepStatus.SUCCESS, message="API key configuration deferred to GUI")
-
-    def _validate_api_key(self, platform: Platform) -> StepResult:
-        return StepResult(status=StepStatus.SUCCESS, message="API key validation deferred to GUI")
-
-    def _run_onboarding(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["openclaw", "onboard"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.SUCCESS, message="onboarding deferred to GUI")
-
-    def _verify_gateway(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["openclaw", "gateway", "status"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message="Gateway not responding")
-
-    def _run_doctor(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["openclaw", "doctor"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.SUCCESS, message="doctor check completed with warnings")

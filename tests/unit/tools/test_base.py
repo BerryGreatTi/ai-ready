@@ -10,34 +10,15 @@ class TestOnboardingMode:
     def test_has_automatic_value(self):
         assert OnboardingMode.AUTOMATIC.value == "automatic"
 
-    def test_has_guided_value(self):
-        assert OnboardingMode.GUIDED.value == "guided"
-
-    def test_only_two_members(self):
-        assert len(list(OnboardingMode)) == 2
+    def test_only_one_member(self):
+        assert len(list(OnboardingMode)) == 1
 
 
 class TestOnboardingConfig:
     def test_is_frozen(self):
-        config = OnboardingConfig(mode=OnboardingMode.GUIDED)
+        config = OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
         with pytest.raises((AttributeError, TypeError)):
             config.mode = OnboardingMode.AUTOMATIC  # type: ignore[misc]
-
-    def test_default_provider_selection_false(self):
-        config = OnboardingConfig(mode=OnboardingMode.GUIDED)
-        assert config.provider_selection is False
-
-    def test_default_api_key_input_false(self):
-        config = OnboardingConfig(mode=OnboardingMode.GUIDED)
-        assert config.api_key_input is False
-
-    def test_can_set_provider_selection_true(self):
-        config = OnboardingConfig(mode=OnboardingMode.AUTOMATIC, provider_selection=True)
-        assert config.provider_selection is True
-
-    def test_can_set_api_key_input_true(self):
-        config = OnboardingConfig(mode=OnboardingMode.AUTOMATIC, api_key_input=True)
-        assert config.api_key_input is True
 
 
 class TestToolABC:
@@ -66,8 +47,6 @@ class TestToolABC:
         assert getattr(Tool.get_onboarding_config, "__isabstractmethod__", False)
 
     def test_concrete_subclass_must_implement_all_methods(self):
-        """A partial implementation missing methods cannot be instantiated."""
-
         class PartialTool(Tool):
             def get_name(self):
                 return "partial"
@@ -76,8 +55,6 @@ class TestToolABC:
             PartialTool()  # type: ignore[abstract]
 
     def test_full_concrete_subclass_can_be_instantiated(self):
-        """A complete implementation can be instantiated."""
-
         class ConcreteTool(Tool):
             def get_name(self):
                 return "concrete"
@@ -92,7 +69,7 @@ class TestToolABC:
                 return []
 
             def get_onboarding_config(self):
-                return OnboardingConfig(mode=OnboardingMode.GUIDED)
+                return OnboardingConfig(mode=OnboardingMode.AUTOMATIC)
 
         tool = ConcreteTool()
         assert tool.get_name() == "concrete"

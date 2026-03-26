@@ -99,15 +99,6 @@ class TestClaudeCodeOnboarding:
         config = tool.get_onboarding_config()
         assert config.mode == OnboardingMode.AUTOMATIC
 
-    def test_onboarding_no_provider_selection(self):
-        tool = _make_tool()
-        config = tool.get_onboarding_config()
-        assert config.provider_selection is False
-
-    def test_onboarding_no_api_key_input(self):
-        tool = _make_tool()
-        config = tool.get_onboarding_config()
-        assert config.api_key_input is False
 
 
 class TestClaudeCodeVerifyCommands:
