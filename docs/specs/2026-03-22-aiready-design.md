@@ -4,17 +4,16 @@
 
 AIReady is a cross-platform installer helper that automates the installation and onboarding of AI coding tools (Claude Code, OpenClaw) for beginners. It targets non-developer users on Korean/English Windows, macOS, and Linux systems.
 
-### Deliverables
+### Release Deliverables
 
 | Platform | Claude Code | OpenClaw |
 |----------|-------------|----------|
 | Windows GUI (.exe) | Yes | Yes |
-| Windows Script (.bat + .ps1) | Yes | Yes |
 | macOS GUI (.app) | Yes | Yes |
-| macOS Script (.sh) | Yes | Yes |
-| Linux Script (.sh) | Yes | Yes |
 
-**Total: 10 deliverables**
+**Total: 4 release artifacts** (GUI only; scripts remain in source but excluded from releases)
+
+Scripts (.bat, .ps1, .sh) are available in the `scripts/` directory of the repository but are not included in GitHub Releases. The GUI is the primary delivery method for all platforms.
 
 File naming convention: `AIReady-{Tool}-{Platform}.{ext}`
 
@@ -319,80 +318,64 @@ class Tool(ABC):
 **Prerequisites:** Git (Windows only). None for macOS/Linux.
 
 **Steps:**
-1. check_system - OS/RAM/network
-2. install_prereqs - Git for Windows (Windows only, direct .exe download)
-3. verify_prereqs - verify Git in PATH
+1. check_system - OS info
+2. install_prereqs - Git, Node.js, UV (all platforms)
+3. verify_prereqs - verify all prerequisites in PATH with version check
 4. install_tool - native installer (platform-specific, see below)
-5. verify_install - `claude --version`
-6. run_doctor - `claude doctor`
-7. authenticate - browser OAuth (GUIDED mode)
-8. verify_auth - verify authentication via `claude doctor`
+5. verify_install - `claude --version` + persist binary dir to system PATH
 
-**Platform-specific installation commands:**
-- macOS/Linux: `curl -fsSL https://claude.ai/install.sh | bash`
-- Windows GUI (.exe): Download and execute `https://claude.ai/install.cmd` via `subprocess` (avoids PowerShell entirely, uses CMD which is encoding-safe)
-- Windows BAT script: `curl -fsSL https://claude.ai/install.cmd -o "%TEMP%\claude-install.cmd" && "%TEMP%\claude-install.cmd"`
-- Windows PS1 script: `irm https://claude.ai/install.ps1 | iex` (secondary option)
+**Platform-specific installation (3-tier fallback on Windows):**
+- macOS/Linux: `curl -fsSL https://claude.ai/install.sh | bash` (via `run_process_live`)
+- Windows Method 1: PowerShell installer (`install.ps1`) - official primary
+- Windows Method 2: CMD installer (`install.cmd`) - fallback
+- Windows Method 3: npm install (`@anthropic-ai/claude-code`) - final fallback (Node.js already installed)
 
-**Note on Windows:** The GUI (.exe) and BAT script use the CMD-based installer (`install.cmd`) to avoid Korean encoding issues with the PowerShell installer. The PS1 script uses the PowerShell installer as a secondary option.
+**Critical implementation notes (from rc1-rc15 testing):**
+- All installer commands use `run_process_live()` to avoid pipe buffer deadlocks with large output. See [ADR-0008](../decisions/ADR-0008-windows-installer-lessons.md).
+- Timeout is 600 seconds (10 minutes) for installer commands.
+- `stdin=DEVNULL` prevents installers from waiting for user input.
+- After each prerequisite install, PATH is refreshed by appending known dirs (never replacing from registry).
+- After verify_install, the binary's directory is persisted to system PATH via `platform.add_to_path()`. See [ADR-0006](../decisions/ADR-0006-permanent-path-setup.md).
 
-**Onboarding:** GUIDED mode. Browser-based auth cannot be fully automated. Installer opens browser automatically and shows step-by-step instructions. User clicks "Authentication Complete" button, then `claude doctor` verifies.
+**Onboarding:** CLI handoff. After install, the GUI launches `claude` in a new terminal. The CLI handles its own first-run authentication. See [ADR-0010](../decisions/ADR-0010-cli-handoff-onboarding.md).
 
 ### OpenClawTool
 
-**Prerequisites:** Node.js 22.16+ (all platforms).
+**Prerequisites:** Git >= 2.0, Node.js >= 22.16, UV >= 0.1.0 (all platforms, same as ClaudeCodeTool).
 
 **Steps:**
-1. check_system - OS/network
-2. install_prereqs - Node.js (platform-specific)
-3. verify_prereqs - `node --version` >= 22.16
-4. install_tool - official installer script (primary)
-5. install_tool_fallback - `npm install -g openclaw@latest` (if step 4 fails)
-6. verify_install - `openclaw --version`
-7. select_provider - AI provider selection (GUI)
-8. configure_api_key - API key input
-9. validate_api_key - test API call to verify key validity (timeout: 10s, retry: 2)
-10. run_onboarding - `openclaw onboard --install-daemon`
-11. verify_gateway - `openclaw gateway status`
-12. run_doctor - `openclaw doctor`
+1. check_system - OS info
+2. install_prereqs - Git, Node.js, UV (all platforms)
+3. verify_prereqs - verify all prerequisites in PATH with version check
+4. install_tool - official installer script (primary), npm fallback
+5. verify_install - `openclaw --version` + persist binary dir to system PATH
 
 **Installation fallback strategy:**
-- Step 4: Try official installer script (`curl ... | bash` or PowerShell equivalent)
-- Step 5: If step 4 fails, fall back to `npm install -g openclaw@latest` (Node.js is already installed at this point)
-- If both fail: show error with manual installation URL
+- Step 4 first tries official installer script (`curl ... | bash` or PowerShell equivalent)
+- If that fails, falls back to `npm install -g openclaw@latest` (Node.js is already installed at this point)
+- If both fail: show error with Retry/View Log/Exit buttons
 
-**API key validation:** Make a lightweight test request to the selected provider's API. Show spinner during validation. On timeout (10s), retry once. On second failure, allow user to proceed anyway with a warning (key may still be valid, just slow network).
-
-**Onboarding:** AUTOMATIC mode. Provider selection UI with top 3 (Anthropic, OpenAI, Gemini) above separator, remaining providers + Ollama below. API key input with paste button, validation via API call, masked display. Ollama selected = skip API key and validation steps.
+**Onboarding:** CLI handoff. After install, the GUI launches `openclaw onboard` in a new terminal. The CLI handles provider selection, API key input, and daemon setup interactively. See [ADR-0010](../decisions/ADR-0010-cli-handoff-onboarding.md).
 
 ## 6. GUI Design
 
 ### Screen Flow
 
 ```
-[Language Select] -> [Tool Select] -> [Progress] -> [Auth/API Key] -> [Complete]
+[Language Select] -> [Tool Select] -> [Progress] -> [Complete]
 ```
 
-For OpenClaw, between Progress and Complete:
-```
-[Progress] -> [Provider Select] -> [API Key Input] -> [Onboarding Progress] -> [Complete]
-```
+Same flow for both tools. After installation, the Complete screen auto-launches the tool in a terminal for CLI-based onboarding.
 
 ### Screens
 
-**Language Select**: Two large buttons (Korean / English). Selection changes all UI text immediately.
+**Language Select**: Centered hero layout with brand title. Two accent buttons (Korean / English). Selection changes all UI text immediately.
 
-**Tool Select**: Card-style buttons (large click area). One tool per card with name, one-line description, and requirement note. Single selection only.
+**Tool Select**: Card-style selection with border highlight on click. One tool per card with name, description, and requirement note. Ghost-style back button, accent next button.
 
-**Progress**: Step checklist with status indicators (check=done, dot=running, circle=waiting). Overall progress bar. Current operation detail text. Error state shows red indicator + error message + Retry/View Log/Exit buttons.
+**Progress**: Steps displayed in a rounded card container with status indicators (check=done, dot=running, circle=waiting). Slim progress bar. Muted status text. Error state shows error message + Retry/View Log/Exit buttons.
 
-**Provider Select** (OpenClaw only): Radio list with top 3 above separator line. Anthropic has "Recommended" badge. Ollama at bottom with "(Local - No API key needed)" label.
-
-**API Key Input** (OpenClaw only, not for Ollama): Masked input field + Paste button + Show/Hide toggle. "Get API Key" link opens provider's key page in browser. Validate button tests key via API call.
-
-**Auth Guide** (Claude Code only): Numbered step instructions. Subscription requirement warning. "Open Browser" button. "Verify Authentication" button runs `claude doctor`.
-
-**Complete**: Success message. Command box with copy button (`claude` or `openclaw`). "New terminal required" notice if PATH was updated. "Open Terminal" button.
+**Complete**: Centered success layout with checkmark. Command displayed in styled code box with copy button. Auto-launches tool in new terminal 500ms after screen appears. "Launch {tool}" primary button for manual re-launch. "Exit" ghost button.
 
 ### GUI Constants
 
@@ -453,6 +436,7 @@ For OpenClaw, between Progress and Complete:
 - Linux: distro auto-detect via `/etc/os-release`, apt/dnf/pacman/apk
 - Color output with ANSI codes
 - API key input with `read -s` (silent)
+- **PATH permanently written to shell config** (`~/.zshrc` or `~/.bashrc`) via `add_to_path_permanently()` helper. Duplicate prevention via grep check. Comment marker: `# Added by AIReady installer`. See [ADR-0006](../decisions/ADR-0006-permanent-path-setup.md).
 
 ### Script File Matrix
 

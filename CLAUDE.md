@@ -14,10 +14,13 @@ Cross-platform installer helper for beginners to easily set up Claude Code and O
 | Platform | Claude Code | OpenClaw |
 |----------|-------------|----------|
 | Windows GUI (.exe) | Yes | Yes |
-| Windows Script (.bat + .ps1) | Yes | Yes |
 | macOS GUI (.app) | Yes | Yes |
-| macOS Script (.sh) | Yes | Yes |
-| Linux Script (.sh) | Yes | Yes |
+
+Scripts (.bat, .ps1, .sh) exist in `scripts/` but are excluded from releases. GUI is the primary delivery.
+
+### Universal Prerequisites
+
+Both tools install Git, Node.js, and UV on all platforms before the main tool. See [ADR-0007](docs/decisions/ADR-0007-universal-prerequisites.md).
 
 ### Critical: Korean Windows
 

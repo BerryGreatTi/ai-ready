@@ -32,16 +32,16 @@ File naming: `AIReady-{Tool}-{Platform}.{ext}`
 
 The installer must detect and automatically install all prerequisites.
 
-**Claude Code prerequisites:**
-- Windows: Git for Windows
-- macOS/Linux: None (native installer has zero dependencies)
+**Universal prerequisites (all tools, all platforms):**
+- Git >= 2.0
+- Node.js >= 22.16 (v24 LTS recommended)
+- UV >= 0.1.0 (Python package manager by Astral)
 
-**OpenClaw prerequisites:**
-- All platforms: Node.js 22.16+ (24 recommended)
+See [ADR-0007](../decisions/ADR-0007-universal-prerequisites.md) for rationale.
 
 Detection must check:
 - Whether the tool exists in PATH
-- Version compatibility (not just presence)
+- Version compatibility (not just presence) using numeric pattern extraction from version strings (e.g., `"git version 2.53.0.windows.2"` -> `2.53.0`)
 - Whether PATH is correctly configured after installation
 
 ### FR-2: Target Tool Installation

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests (with coverage enforcement on Linux)
+        if: runner.os == 'Linux'
+        run: pytest tests/ --cov=aiready --cov-report=xml -v
+
+      - name: Run tests (without coverage enforcement)
+        if: runner.os != 'Linux'
+        run: pytest tests/ --cov=aiready --cov-report=xml --cov-fail-under=0 -v
+
+      - name: Run shellcheck (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck --severity=warning -e SC1091,SC2086,SC2034 scripts/**/*.sh
+
+      - name: Run bash syntax check (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          for f in scripts/**/*.sh; do
+            bash -n "$f"
+          done
