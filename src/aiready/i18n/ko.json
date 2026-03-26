@@ -72,6 +72,7 @@
   "complete.copy": "복사",
   "complete.new_terminal_notice": "PATH 변경 사항을 적용하려면 새 터미널 창을 여세요.",
   "complete.open_terminal": "터미널 열기",
+  "complete.launch_tool": "{tool} 실행",
   "complete.exit": "종료",
   "button.next": "다음",
   "button.back": "뒤로",

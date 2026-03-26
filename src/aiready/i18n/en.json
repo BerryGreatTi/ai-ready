@@ -72,6 +72,7 @@
   "complete.copy": "Copy",
   "complete.new_terminal_notice": "Open a new terminal window for PATH changes to take effect.",
   "complete.open_terminal": "Open Terminal",
+  "complete.launch_tool": "Launch {tool}",
   "complete.exit": "Exit",
   "button.next": "Next",
   "button.back": "Back",

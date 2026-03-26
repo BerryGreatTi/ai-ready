@@ -1,6 +1,7 @@
 """Installation complete screen."""
 from __future__ import annotations
 
+import subprocess
 import sys
 
 import customtkinter as ctk
@@ -16,13 +17,51 @@ _TOOL_COMMANDS: dict[str, str] = {
 }
 
 
+def _launch_in_terminal(command: str) -> bool:
+    """Open a new terminal window and run the given command inside it."""
+    try:
+        if sys.platform == "win32":
+            subprocess.Popen([
+                "powershell", "-NoExit", "-Command", command,
+            ], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        elif sys.platform == "darwin":
+            apple_script = (
+                f'tell application "Terminal"\n'
+                f'  do script "{command}"\n'
+                f'  activate\n'
+                f'end tell'
+            )
+            subprocess.Popen(["osascript", "-e", apple_script])
+        else:
+            _launch_in_linux_terminal(command)
+        return True
+    except Exception:
+        return False
+
+
+def _launch_in_linux_terminal(command: str) -> None:
+    """Try common Linux terminal emulators with a command."""
+    terminals = [
+        ("gnome-terminal", ["gnome-terminal", "--", "bash", "-c", f"{command}; exec bash"]),
+        ("konsole", ["konsole", "-e", "bash", "-c", f"{command}; exec bash"]),
+        ("xfce4-terminal", ["xfce4-terminal", "-e", f"bash -c '{command}; exec bash'"]),
+        ("xterm", ["xterm", "-e", f"bash -c '{command}; exec bash'"]),
+    ]
+    for _name, cmd in terminals:
+        try:
+            subprocess.Popen(cmd)
+            return
+        except FileNotFoundError:
+            continue
+
+
 class CompleteScreen(ctk.CTkFrame):
     def __init__(self, parent, app, **kwargs):
         super().__init__(parent, fg_color="transparent")
         self.app = app
 
         tool_id = app.selected_tool or ""
-        command = _TOOL_COMMANDS.get(tool_id, tool_id)
+        self._command = _TOOL_COMMANDS.get(tool_id, tool_id)
 
         # Spacer
         ctk.CTkLabel(self, text="").pack(pady=30)
@@ -38,10 +77,9 @@ class CompleteScreen(ctk.CTkFrame):
         ).pack(pady=(0, 10))
 
         # Success message
-        tool_name = command
         ctk.CTkLabel(
             self,
-            text=app.i18n.get("complete.success", tool=tool_name),
+            text=app.i18n.get("complete.success", tool=self._command),
             font=FONT_BODY,
             wraplength=400,
         ).pack(pady=(0, 20))
@@ -56,7 +94,7 @@ class CompleteScreen(ctk.CTkFrame):
         cmd_frame.pack(pady=(0, 10))
 
         self._cmd_label = ctk.CTkLabel(
-            cmd_frame, text=command, font=FONT_CODE, corner_radius=6,
+            cmd_frame, text=self._command, font=FONT_CODE, corner_radius=6,
         )
         self._cmd_label.pack(side="left", padx=(0, 8))
 
@@ -65,7 +103,7 @@ class CompleteScreen(ctk.CTkFrame):
             text=app.i18n.get("complete.copy"),
             width=80,
             font=FONT_SMALL,
-            command=lambda: self._copy_to_clipboard(command),
+            command=lambda: self._copy_to_clipboard(self._command),
         ).pack(side="left")
 
         # New terminal notice
@@ -86,10 +124,10 @@ class CompleteScreen(ctk.CTkFrame):
 
         ctk.CTkButton(
             btn_frame,
-            text=app.i18n.get("complete.open_terminal"),
-            width=160,
+            text=app.i18n.get("complete.launch_tool", tool=self._command),
+            width=200,
             font=FONT_BODY,
-            command=self._open_terminal,
+            command=self._launch_tool,
         ).pack(side="left", padx=8)
 
         ctk.CTkButton(
@@ -100,21 +138,12 @@ class CompleteScreen(ctk.CTkFrame):
             command=app.destroy,
         ).pack(side="left", padx=8)
 
+        # Auto-launch
+        self.after(500, self._launch_tool)
+
     def _copy_to_clipboard(self, text: str):
         self.clipboard_clear()
         self.clipboard_append(text)
 
-    def _open_terminal(self):
-        import subprocess
-        if sys.platform == "win32":
-            subprocess.Popen(["cmd.exe"])
-        elif sys.platform == "darwin":
-            subprocess.Popen(["open", "-a", "Terminal"])
-        else:
-            # Try common Linux terminals
-            for terminal in ("gnome-terminal", "xterm", "konsole", "xfce4-terminal"):
-                try:
-                    subprocess.Popen([terminal])
-                    return
-                except FileNotFoundError:
-                    continue
+    def _launch_tool(self):
+        _launch_in_terminal(self._command)
