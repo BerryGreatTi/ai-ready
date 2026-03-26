@@ -22,7 +22,8 @@ class AIReadyApp(ctk.CTk):
         self.title("AIReady")
         self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.resizable(False, False)
-        ctk.set_appearance_mode("system")
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
 
         # Container for screens
         self._container = ctk.CTkFrame(self, fg_color="transparent")

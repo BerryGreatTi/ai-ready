@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import customtkinter as ctk
-from aiready.gui.theme import FONT_TITLE, FONT_SUBTITLE, FONT_BODY, PADDING, BUTTON_HEIGHT
+from aiready.gui.theme import (
+    FONT_HERO, FONT_SUBTITLE, FONT_BODY, PADDING,
+    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_MUTED,
+)
 
 
 class LanguageSelectScreen(ctk.CTkFrame):
@@ -10,32 +13,45 @@ class LanguageSelectScreen(ctk.CTkFrame):
         super().__init__(parent, fg_color="transparent")
         self.app = app
 
-        # Spacer
-        ctk.CTkLabel(self, text="").pack(pady=60)
+        # Center content vertically
+        self.pack_propagate(False)
+        center = ctk.CTkFrame(self, fg_color="transparent")
+        center.place(relx=0.5, rely=0.42, anchor="center")
 
-        # Title
-        ctk.CTkLabel(self, text="AIReady", font=FONT_TITLE).pack(pady=(0, 10))
-
-        # Subtitle (always bilingual)
+        # Brand
         ctk.CTkLabel(
-            self,
-            text="Select your language / 언어를 선택하세요",
-            font=FONT_SUBTITLE,
-        ).pack(pady=(0, 40))
+            center, text="AIReady", font=FONT_HERO, text_color=COLOR_PRIMARY,
+        ).pack(pady=(0, 6))
+
+        ctk.CTkLabel(
+            center, text="AI Tool Setup Helper",
+            font=FONT_SUBTITLE, text_color=COLOR_MUTED,
+        ).pack(pady=(0, 50))
+
+        # Language prompt
+        ctk.CTkLabel(
+            center,
+            text="Select your language / \uc5b8\uc5b4\ub97c \uc120\ud0dd\ud558\uc138\uc694",
+            font=FONT_BODY, text_color=COLOR_MUTED,
+        ).pack(pady=(0, 20))
 
         # Buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=10)
+        btn_frame = ctk.CTkFrame(center, fg_color="transparent")
+        btn_frame.pack()
 
         ctk.CTkButton(
-            btn_frame, text="한국어", width=180, height=50,
-            font=FONT_BODY, command=lambda: self._select("ko"),
-        ).pack(side="left", padx=10)
+            btn_frame, text="\ud55c\uad6d\uc5b4", width=190, height=48,
+            font=FONT_BODY, corner_radius=10,
+            fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER,
+            command=lambda: self._select("ko"),
+        ).pack(side="left", padx=8)
 
         ctk.CTkButton(
-            btn_frame, text="English", width=180, height=50,
-            font=FONT_BODY, command=lambda: self._select("en"),
-        ).pack(side="left", padx=10)
+            btn_frame, text="English", width=190, height=48,
+            font=FONT_BODY, corner_radius=10,
+            fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER,
+            command=lambda: self._select("en"),
+        ).pack(side="left", padx=8)
 
     def _select(self, lang: str):
         self.app.i18n.set_language(lang)

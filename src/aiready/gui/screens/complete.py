@@ -8,7 +8,9 @@ import sys
 import customtkinter as ctk
 
 from aiready.gui.theme import (
-    FONT_TITLE, FONT_BODY, FONT_SMALL, FONT_CODE, PADDING, COLOR_SUCCESS,
+    FONT_TITLE, FONT_BODY, FONT_SMALL, FONT_CODE, PADDING,
+    COLOR_SUCCESS, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_MUTED,
+    COLOR_CARD_BG,
 )
 
 
@@ -68,80 +70,77 @@ class CompleteScreen(ctk.CTkFrame):
         tool_id = app.selected_tool or ""
         self._command = _TOOL_COMMANDS.get(tool_id, tool_id)
 
-        # Spacer
-        ctk.CTkLabel(self, text="").pack(pady=30)
+        # Center content
+        self.pack_propagate(False)
+        center = ctk.CTkFrame(self, fg_color="transparent")
+        center.place(relx=0.5, rely=0.38, anchor="center")
 
-        # Success checkmark
+        # Success icon
         ctk.CTkLabel(
-            self, text="✓", font=("", 64, "bold"), text_color=COLOR_SUCCESS,
-        ).pack(pady=(0, 10))
+            center, text="✓", font=("", 56, "bold"), text_color=COLOR_SUCCESS,
+        ).pack(pady=(0, 12))
 
         # Title
         ctk.CTkLabel(
-            self, text=app.i18n.get("complete.title"), font=FONT_TITLE,
-        ).pack(pady=(0, 10))
+            center, text=app.i18n.get("complete.title"), font=FONT_TITLE,
+        ).pack(pady=(0, 8))
 
         # Success message
         ctk.CTkLabel(
-            self,
+            center,
             text=app.i18n.get("complete.success", tool=self._command),
-            font=FONT_BODY,
-            wraplength=400,
-        ).pack(pady=(0, 20))
+            font=FONT_BODY, text_color=COLOR_MUTED,
+            wraplength=380,
+        ).pack(pady=(0, 28))
 
-        # Command hint
+        # Command box
+        cmd_box = ctk.CTkFrame(center, corner_radius=10, fg_color=COLOR_CARD_BG)
+        cmd_box.pack(pady=(0, 8))
+
+        inner = ctk.CTkFrame(cmd_box, fg_color="transparent")
+        inner.pack(padx=16, pady=10)
+
         ctk.CTkLabel(
-            self, text=app.i18n.get("complete.command_hint"), font=FONT_BODY,
-        ).pack(pady=(0, 5))
-
-        # Command box + copy button
-        cmd_frame = ctk.CTkFrame(self, fg_color="transparent")
-        cmd_frame.pack(pady=(0, 10))
-
-        self._cmd_label = ctk.CTkLabel(
-            cmd_frame, text=self._command, font=FONT_CODE, corner_radius=6,
-        )
-        self._cmd_label.pack(side="left", padx=(0, 8))
+            inner, text=self._command, font=FONT_CODE,
+        ).pack(side="left", padx=(0, 12))
 
         ctk.CTkButton(
-            cmd_frame,
+            inner,
             text=app.i18n.get("complete.copy"),
-            width=80,
-            font=FONT_SMALL,
+            width=60, height=28,
+            font=FONT_SMALL, corner_radius=6,
+            fg_color="transparent", border_width=1, border_color=COLOR_MUTED,
+            text_color=COLOR_MUTED, hover_color=("gray85", "gray25"),
             command=lambda: self._copy_to_clipboard(self._command),
         ).pack(side="left")
 
-        # New terminal notice
+        # Notice
         ctk.CTkLabel(
-            self,
+            center,
             text=app.i18n.get("complete.new_terminal_notice"),
-            font=FONT_SMALL,
-            text_color="gray",
-            wraplength=400,
-        ).pack(pady=(0, 15))
-
-        # Spacer
-        ctk.CTkLabel(self, text="").pack(expand=True)
+            font=FONT_SMALL, text_color=COLOR_MUTED,
+            wraplength=380,
+        ).pack(pady=(0, 28))
 
         # Action buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(padx=PADDING, pady=PADDING)
-
         ctk.CTkButton(
-            btn_frame,
+            center,
             text=app.i18n.get("complete.launch_tool", tool=self._command),
-            width=200,
-            font=FONT_BODY,
+            width=260, height=44,
+            font=FONT_BODY, corner_radius=10,
+            fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER,
             command=self._launch_tool,
-        ).pack(side="left", padx=8)
+        ).pack(pady=(0, 10))
 
         ctk.CTkButton(
-            btn_frame,
+            center,
             text=app.i18n.get("complete.exit"),
-            width=100,
-            font=FONT_BODY,
+            width=260, height=40,
+            font=FONT_BODY, corner_radius=10,
+            fg_color="transparent", border_width=1, border_color=COLOR_MUTED,
+            text_color=COLOR_MUTED, hover_color=("gray85", "gray25"),
             command=app.destroy,
-        ).pack(side="left", padx=8)
+        ).pack()
 
         # Auto-launch
         self.after(500, self._launch_tool)

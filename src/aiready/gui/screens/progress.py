@@ -9,8 +9,9 @@ import customtkinter as ctk
 from aiready.core.installer import Installer
 from aiready.core.models import Step, StepResult, StepStatus
 from aiready.gui.theme import (
-    FONT_TITLE, FONT_BODY, FONT_SMALL, PADDING,
-    COLOR_SUCCESS, COLOR_ERROR, COLOR_RUNNING,
+    FONT_TITLE, FONT_BODY, FONT_SMALL, PADDING, PADDING_SM,
+    COLOR_SUCCESS, COLOR_ERROR, COLOR_RUNNING, COLOR_MUTED,
+    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_CARD_BG,
 )
 from aiready.tools.claude_code import ClaudeCodeTool
 from aiready.tools.openclaw import OpenClawTool
@@ -35,38 +36,52 @@ class ProgressScreen(ctk.CTkFrame):
         # Title
         tool_name = self._tool.get_name()
         ctk.CTkLabel(
-            self, text=f"{app.i18n.get('progress.title')} - {tool_name}",
+            self, text=f"{app.i18n.get('progress.title')}",
             font=FONT_TITLE,
-        ).pack(pady=(20, 15))
+        ).pack(pady=(30, 4))
 
-        # Step list (scrollable if many steps)
-        self._step_frame = ctk.CTkScrollableFrame(self, height=300)
-        self._step_frame.pack(fill="x", padx=PADDING, pady=(0, 10))
+        ctk.CTkLabel(
+            self, text=tool_name,
+            font=FONT_SMALL, text_color=COLOR_MUTED,
+        ).pack(pady=(0, 20))
+
+        # Step list
+        step_container = ctk.CTkFrame(
+            self, corner_radius=12, fg_color=COLOR_CARD_BG,
+        )
+        step_container.pack(fill="x", padx=PADDING, pady=(0, 16))
 
         for i, step in enumerate(self._steps):
-            row = ctk.CTkFrame(self._step_frame, fg_color="transparent")
-            row.pack(fill="x", pady=2)
+            row = ctk.CTkFrame(step_container, fg_color="transparent")
+            row.pack(fill="x", padx=16, pady=6)
 
-            status_label = ctk.CTkLabel(row, text="○", width=30, font=FONT_BODY)
+            status_label = ctk.CTkLabel(
+                row, text="○", width=24, font=FONT_BODY, text_color=COLOR_MUTED,
+            )
             status_label.pack(side="left")
             self._step_statuses.append(status_label)
 
             name_label = ctk.CTkLabel(
-                row, text=app.i18n.get(step.name_key, tool=self._tool.get_name()), font=FONT_BODY, anchor="w",
+                row,
+                text=app.i18n.get(step.name_key, tool=tool_name),
+                font=FONT_BODY, anchor="w",
             )
-            name_label.pack(side="left", fill="x", expand=True)
+            name_label.pack(side="left", padx=(8, 0), fill="x", expand=True)
             self._step_labels.append(name_label)
 
         # Progress bar
-        self._progress = ctk.CTkProgressBar(self, width=400)
-        self._progress.pack(pady=(10, 5), padx=PADDING)
+        self._progress = ctk.CTkProgressBar(
+            self, width=400, height=6, corner_radius=3,
+            progress_color=COLOR_PRIMARY,
+        )
+        self._progress.pack(pady=(4, 6), padx=PADDING)
         self._progress.set(0)
 
         # Status text
         self._status_text = ctk.CTkLabel(
-            self, text="", font=FONT_SMALL, text_color="gray",
+            self, text="", font=FONT_SMALL, text_color=COLOR_MUTED,
         )
-        self._status_text.pack(pady=(0, 10))
+        self._status_text.pack(pady=(0, 8))
 
         # Error frame (hidden initially)
         self._error_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -81,17 +96,25 @@ class ProgressScreen(ctk.CTkFrame):
         err_buttons.pack(pady=5)
 
         ctk.CTkButton(
-            err_buttons, text=app.i18n.get("button.retry"), width=100,
+            err_buttons, text=app.i18n.get("button.retry"), width=100, height=36,
+            font=FONT_BODY, corner_radius=8,
+            fg_color=COLOR_PRIMARY, hover_color=COLOR_PRIMARY_HOVER,
             command=self._retry,
         ).pack(side="left", padx=5)
 
         ctk.CTkButton(
-            err_buttons, text=app.i18n.get("button.view_log"), width=100,
+            err_buttons, text=app.i18n.get("button.view_log"), width=100, height=36,
+            font=FONT_BODY, corner_radius=8,
+            fg_color="transparent", border_width=1, border_color=COLOR_MUTED,
+            text_color=COLOR_MUTED, hover_color=("gray85", "gray25"),
             command=self._view_log,
         ).pack(side="left", padx=5)
 
         ctk.CTkButton(
-            err_buttons, text=app.i18n.get("button.exit"), width=100,
+            err_buttons, text=app.i18n.get("button.exit"), width=100, height=36,
+            font=FONT_BODY, corner_radius=8,
+            fg_color="transparent", border_width=1, border_color=COLOR_MUTED,
+            text_color=COLOR_MUTED, hover_color=("gray85", "gray25"),
             command=self.app.destroy,
         ).pack(side="left", padx=5)
 
@@ -128,7 +151,7 @@ class ProgressScreen(ctk.CTkFrame):
         elif result.status == StepStatus.FAILED:
             self._step_statuses[index].configure(text="✗", text_color=COLOR_ERROR)
         elif result.status == StepStatus.SKIPPED:
-            self._step_statuses[index].configure(text="–", text_color="gray")
+            self._step_statuses[index].configure(text="–", text_color=COLOR_MUTED)
 
     def _on_complete(self, result):
         if result.success:
@@ -141,9 +164,8 @@ class ProgressScreen(ctk.CTkFrame):
             self._error_frame.pack(pady=10)
 
     def _retry(self):
-        # Reset UI
         for lbl in self._step_statuses:
-            lbl.configure(text="○", text_color="gray")
+            lbl.configure(text="○", text_color=COLOR_MUTED)
         self._progress.set(0)
         self._start_install()
 
