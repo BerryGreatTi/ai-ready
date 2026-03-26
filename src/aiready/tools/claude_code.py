@@ -143,7 +143,19 @@ class ClaudeCodeTool(Tool):
     def _install_tool_windows(self, platform: Platform) -> StepResult:
         _TIMEOUT = 600  # 10 minutes
 
-        # Method 1: CMD-based installer (output to file to avoid pipe deadlock)
+        # Method 1: PowerShell installer (official primary)
+        if self._logger:
+            self._logger.debug("install_tool", "Trying official PowerShell installer")
+        result = run_process_live([
+            "powershell", "-ExecutionPolicy", "ByPass", "-Command",
+            "irm https://claude.ai/install.ps1 | iex",
+        ], timeout=_TIMEOUT)
+        if self._logger:
+            self._logger.debug("install_tool", f"install.ps1: code={result.return_code} stdout={result.stdout[-300:]} stderr={result.stderr[-300:]}")
+        if result.succeeded:
+            return StepResult(status=StepStatus.SUCCESS)
+
+        # Method 2: CMD batch installer (fallback)
         tmp = platform.get_temp_dir()
         dl_result = platform.run_command([
             "curl", "-fsSL", "https://claude.ai/install.cmd",
@@ -151,24 +163,12 @@ class ClaudeCodeTool(Tool):
         ], timeout=_TIMEOUT)
         if dl_result.succeeded:
             if self._logger:
-                self._logger.debug("install_tool", "Running install.cmd (uncaptured to avoid pipe deadlock)")
-            result = run_process_live(["cmd", "/c", str(tmp / "claude-install.cmd")], timeout=_TIMEOUT)
+                self._logger.debug("install_tool", "Trying CMD installer as fallback")
+            result2 = run_process_live(["cmd", "/c", str(tmp / "claude-install.cmd")], timeout=_TIMEOUT)
             if self._logger:
-                self._logger.debug("install_tool", f"install.cmd: code={result.return_code} stdout={result.stdout[-300:]} stderr={result.stderr[-300:]}")
-            if result.succeeded:
+                self._logger.debug("install_tool", f"install.cmd: code={result2.return_code} stdout={result2.stdout[-300:]} stderr={result2.stderr[-300:]}")
+            if result2.succeeded:
                 return StepResult(status=StepStatus.SUCCESS)
-
-        # Method 2: PowerShell installer (fallback, also uncaptured)
-        if self._logger:
-            self._logger.debug("install_tool", "Trying PowerShell installer as fallback")
-        result2 = run_process_live([
-            "powershell", "-ExecutionPolicy", "ByPass", "-Command",
-            "irm https://claude.ai/install.ps1 | iex",
-        ], timeout=_TIMEOUT)
-        if self._logger:
-            self._logger.debug("install_tool", f"install.ps1: code={result2.return_code} stdout={result2.stdout[-300:]} stderr={result2.stderr[-300:]}")
-        if result2.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
 
         # Method 3: npm (deprecated but works)
         if self._logger:
@@ -181,8 +181,8 @@ class ClaudeCodeTool(Tool):
 
         # All methods failed
         detail = (
+            f"PS1 installer: code={result.return_code} stderr={result.stderr[-200:]}\n"
             f"CMD installer: code={dl_result.return_code if dl_result else 'skip'}\n"
-            f"PS1 installer: code={result2.return_code} stderr={result2.stderr[-200:]}\n"
             f"npm install: code={result3.return_code} stderr={result3.stderr[-200:]}"
         )
         return StepResult(status=StepStatus.FAILED, message="All installation methods failed", detail=detail)
