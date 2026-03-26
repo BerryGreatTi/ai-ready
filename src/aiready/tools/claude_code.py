@@ -71,12 +71,6 @@ class ClaudeCodeTool(Tool):
                 required=True,
             ),
             Step(
-                id="run_doctor",
-                name_key="step.run_doctor",
-                action=lambda: self._run_doctor(platform),
-                required=False,
-            ),
-            Step(
                 id="authenticate",
                 name_key="step.authenticate",
                 action=lambda: self._authenticate(platform),
@@ -92,7 +86,7 @@ class ClaudeCodeTool(Tool):
         return steps
 
     def get_verify_commands(self) -> list[str]:
-        return ["claude --version", "claude doctor"]
+        return ["claude --version"]
 
     def get_onboarding_config(self) -> OnboardingConfig:
         return OnboardingConfig(mode=OnboardingMode.GUIDED)
@@ -222,12 +216,6 @@ class ClaudeCodeTool(Tool):
         if info is not None:
             return StepResult(status=StepStatus.SUCCESS)
         return StepResult(status=StepStatus.FAILED, message="claude command not found")
-
-    def _run_doctor(self, platform: Platform) -> StepResult:
-        result = platform.run_command(["claude", "doctor"])
-        if result.succeeded:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.SUCCESS, message="doctor check completed with warnings")
 
     def _authenticate(self, platform: Platform) -> StepResult:
         platform.open_browser("https://claude.ai/login")

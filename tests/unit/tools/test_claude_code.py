@@ -55,7 +55,6 @@ class TestClaudeCodeSteps:
         "verify_prereqs",
         "install_tool",
         "verify_install",
-        "run_doctor",
         "authenticate",
         "verify_auth",
     ]
@@ -64,7 +63,7 @@ class TestClaudeCodeSteps:
         platform = _make_platform()
         tool = _make_tool(platform)
         steps = tool.get_steps(platform)
-        assert len(steps) == 8
+        assert len(steps) == 7
 
     def test_step_ids(self):
         platform = _make_platform()
@@ -118,9 +117,8 @@ class TestClaudeCodeVerifyCommands:
         tool = _make_tool()
         cmds = tool.get_verify_commands()
         assert "claude --version" in cmds
-        assert "claude doctor" in cmds
 
     def test_verify_commands_count(self):
         tool = _make_tool()
         cmds = tool.get_verify_commands()
-        assert len(cmds) == 2
+        assert len(cmds) == 1
