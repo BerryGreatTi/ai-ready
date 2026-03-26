@@ -201,6 +201,15 @@ class ClaudeCodeTool(Tool):
 
     def _verify_install(self, platform: Platform) -> StepResult:
         info = platform.check_command("claude")
-        if info is not None:
-            return StepResult(status=StepStatus.SUCCESS)
-        return StepResult(status=StepStatus.FAILED, message="claude command not found")
+        if info is None:
+            return StepResult(status=StepStatus.FAILED, message="claude command not found")
+        self._persist_path(platform, info.path)
+        return StepResult(status=StepStatus.SUCCESS)
+
+    def _persist_path(self, platform: Platform, binary_path: str) -> None:
+        """Ensure the binary's directory is in the persistent system PATH."""
+        from pathlib import Path
+        bin_dir = Path(binary_path).parent
+        platform.add_to_path(bin_dir)
+        if self._logger:
+            self._logger.debug("verify_install", f"Persisted PATH entry: {bin_dir}")
