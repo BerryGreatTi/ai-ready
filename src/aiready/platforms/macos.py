@@ -7,6 +7,7 @@ import os
 import platform as platform_module
 import shutil
 import tempfile
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -84,22 +85,37 @@ class MacOSPlatform(Platform):
         brew = self.check_command("brew")
         if brew:
             result = run_process_live(["brew", "install", "git"])
-        else:
-            result = run_process_live(["xcode-select", "--install"])
-        return InstallResult(success=result.succeeded)
+            if result.succeeded:
+                self._refresh_path()
+                return InstallResult(success=True)
+            return InstallResult(
+                success=False,
+                error=StepResult(
+                    status=StepStatus.FAILED,
+                    message=result.stderr or "brew install git failed",
+                ),
+            )
+        # Fallback: Xcode Command Line Tools.
+        # xcode-select --install opens a GUI dialog and returns immediately.
+        # Poll until git becomes available or timeout.
+        run_process(["xcode-select", "--install"])
+        for _ in range(120):  # up to 10 minutes (120 * 5s)
+            time.sleep(5)
+            if shutil.which("git") is not None:
+                return InstallResult(success=True)
+        return InstallResult(
+            success=False,
+            error=StepResult(
+                status=StepStatus.FAILED,
+                message="Xcode Command Line Tools installation timed out",
+                detail="Please install manually: xcode-select --install",
+            ),
+        )
 
     def _install_uv(self) -> InstallResult:
         result = run_process_live(["bash", "-c", "curl -LsSf https://astral.sh/uv/install.sh | bash"])
         if result.succeeded:
-            import os
-            home = os.environ.get("HOME", os.path.expanduser("~"))
-            cargo_bin = os.path.join(home, ".cargo", "bin")
-            local_bin = os.path.join(home, ".local", "bin")
-            current = os.environ.get("PATH", "")
-            for d in [cargo_bin, local_bin]:
-                if d not in current:
-                    os.environ["PATH"] = f"{d}:{current}"
-                    current = os.environ["PATH"]
+            self._refresh_path()
             return InstallResult(success=True)
         return InstallResult(success=False, error=StepResult(status=StepStatus.FAILED, message=result.stderr or "UV installation failed"))
 
@@ -112,6 +128,7 @@ class MacOSPlatform(Platform):
     def _install_nodejs_via_brew(self) -> InstallResult:
         result = run_process_live(["brew", "install", "node"])
         if result.succeeded:
+            self._refresh_path()
             return InstallResult(success=True)
         return InstallResult(
             success=False,
@@ -126,7 +143,7 @@ class MacOSPlatform(Platform):
         pkg_path = tmp / "node-latest.pkg"
         commands = [
             ["curl", "-fsSL", _NODEJS_PKG_URL, "-o", str(pkg_path)],
-            ["installer", "-pkg", str(pkg_path), "-target", "/"],
+            ["sudo", "installer", "-pkg", str(pkg_path), "-target", "/"],
         ]
         for cmd in commands:
             result = run_process_live(cmd)
@@ -139,7 +156,24 @@ class MacOSPlatform(Platform):
                         detail=f"Command: {' '.join(cmd)}",
                     ),
                 )
+        self._refresh_path()
         return InstallResult(success=True)
+
+    def _refresh_path(self) -> None:
+        """Add common macOS install directories to current process PATH."""
+        home = os.environ.get("HOME", os.path.expanduser("~"))
+        current = os.environ.get("PATH", "")
+        dirs_to_add = [
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+            "/opt/homebrew/sbin",
+            os.path.join(home, ".local", "bin"),
+            os.path.join(home, ".cargo", "bin"),
+        ]
+        for d in dirs_to_add:
+            if d not in current:
+                current = f"{d}:{current}"
+        os.environ["PATH"] = current
 
     # ------------------------------------------------------------------
     # verify_prerequisite
@@ -171,8 +205,11 @@ class MacOSPlatform(Platform):
         rc_file = self._get_rc_file()
         export_line = f'export PATH="{path}:$PATH"'
         try:
-            with open(rc_file, "r") as fh:
-                content = fh.read()
+            try:
+                with open(rc_file, "r") as fh:
+                    content = fh.read()
+            except FileNotFoundError:
+                content = ""
             if str(path) in content:
                 return True
             with open(rc_file, "a") as fh:

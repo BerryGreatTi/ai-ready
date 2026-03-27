@@ -174,8 +174,11 @@ class LinuxPlatform(Platform):
         rc_file = self._get_rc_file()
         export_line = f'export PATH="{path}:$PATH"'
         try:
-            with open(rc_file, "r") as fh:
-                content = fh.read()
+            try:
+                with open(rc_file, "r") as fh:
+                    content = fh.read()
+            except FileNotFoundError:
+                content = ""
             if str(path) in content:
                 return True
             with open(rc_file, "a") as fh:

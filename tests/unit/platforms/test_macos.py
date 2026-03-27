@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch, call
@@ -121,7 +122,7 @@ class TestInstallPrerequisite:
         success = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "check_command", return_value=brew_info), patch(
             "aiready.platforms.macos.run_process_live", return_value=success
-        ):
+        ), patch.object(platform, "_refresh_path"):
             result = platform.install_prerequisite(nodejs_prereq)
 
         assert isinstance(result, InstallResult)
@@ -137,12 +138,14 @@ class TestInstallPrerequisite:
 
         assert isinstance(result, InstallResult)
         assert result.success is False
+        assert result.error is not None
+        assert "brew install" in result.error.message
 
     def test_nodejs_install_without_brew(self, platform, nodejs_prereq):
         success = CommandResult(return_code=0, stdout="", stderr="")
         with patch.object(platform, "check_command", return_value=None), patch(
             "aiready.platforms.macos.run_process_live", return_value=success
-        ):
+        ), patch.object(platform, "_refresh_path"):
             result = platform.install_prerequisite(nodejs_prereq)
 
         assert isinstance(result, InstallResult)
@@ -153,6 +156,104 @@ class TestInstallPrerequisite:
         result = platform.install_prerequisite(prereq)
         assert isinstance(result, InstallResult)
         assert result.success is False
+
+    def test_git_install_via_brew_success(self, platform):
+        git_prereq = Prerequisite(name="git", min_version="2.0", check_command="git --version")
+        brew_info = CommandInfo(path="/usr/local/bin/brew", version="4.1.0")
+        success = CommandResult(return_code=0, stdout="", stderr="")
+        with patch.object(platform, "check_command", return_value=brew_info), patch(
+            "aiready.platforms.macos.run_process_live", return_value=success
+        ), patch.object(platform, "_refresh_path"):
+            result = platform.install_prerequisite(git_prereq)
+
+        assert result.success is True
+
+    def test_git_install_via_brew_failure_returns_error(self, platform):
+        git_prereq = Prerequisite(name="git", min_version="2.0", check_command="git --version")
+        brew_info = CommandInfo(path="/usr/local/bin/brew", version="4.1.0")
+        fail = CommandResult(return_code=1, stdout="", stderr="Error: brew install git failed")
+        with patch.object(platform, "check_command", return_value=brew_info), patch(
+            "aiready.platforms.macos.run_process_live", return_value=fail
+        ):
+            result = platform.install_prerequisite(git_prereq)
+
+        assert result.success is False
+        assert result.error is not None
+        assert "brew install git failed" in result.error.message
+
+    def test_git_install_xcode_polls_until_available(self, platform):
+        git_prereq = Prerequisite(name="git", min_version="2.0", check_command="git --version")
+        trigger_result = CommandResult(return_code=0, stdout="", stderr="")
+        # check_command returns None (no brew), run_process triggers xcode dialog
+        with patch.object(platform, "check_command", return_value=None), patch(
+            "aiready.platforms.macos.run_process", return_value=trigger_result
+        ), patch("aiready.platforms.macos.time.sleep"), patch(
+            "aiready.platforms.macos.shutil.which", side_effect=[None, None, "/usr/bin/git"]
+        ):
+            result = platform.install_prerequisite(git_prereq)
+
+        assert result.success is True
+
+    def test_git_install_xcode_timeout(self, platform):
+        git_prereq = Prerequisite(name="git", min_version="2.0", check_command="git --version")
+        trigger_result = CommandResult(return_code=0, stdout="", stderr="")
+        with patch.object(platform, "check_command", return_value=None), patch(
+            "aiready.platforms.macos.run_process", return_value=trigger_result
+        ), patch("aiready.platforms.macos.time.sleep"), patch(
+            "aiready.platforms.macos.shutil.which", return_value=None
+        ):
+            result = platform.install_prerequisite(git_prereq)
+
+        assert result.success is False
+        assert "timed out" in result.error.message
+
+    def test_uv_install_calls_refresh_path(self, platform):
+        uv_prereq = Prerequisite(name="uv", min_version="0.1.0", check_command="uv --version")
+        success = CommandResult(return_code=0, stdout="", stderr="")
+        with patch("aiready.platforms.macos.run_process_live", return_value=success), patch.object(
+            platform, "_refresh_path"
+        ) as mock_refresh:
+            result = platform.install_prerequisite(uv_prereq)
+
+        assert result.success is True
+        mock_refresh.assert_called_once()
+
+    def test_nodejs_pkg_install_uses_sudo(self, platform, nodejs_prereq):
+        success = CommandResult(return_code=0, stdout="", stderr="")
+        with patch.object(platform, "check_command", return_value=None), patch(
+            "aiready.platforms.macos.run_process_live", return_value=success
+        ) as mock_run, patch.object(platform, "get_temp_dir", return_value=Path("/tmp/aiready")), patch.object(
+            platform, "_refresh_path"
+        ):
+            platform.install_prerequisite(nodejs_prereq)
+
+        # Verify the installer command includes sudo
+        calls = mock_run.call_args_list
+        installer_call = [c for c in calls if "installer" in str(c)]
+        assert len(installer_call) > 0
+        assert installer_call[0][0][0][0] == "sudo"
+
+
+# ---------------------------------------------------------------------------
+# _refresh_path
+# ---------------------------------------------------------------------------
+
+
+class TestRefreshPath:
+    def test_adds_common_dirs_to_path(self, platform):
+        with patch.dict(os.environ, {"HOME": "/Users/testuser", "PATH": "/usr/bin"}, clear=True):
+            platform._refresh_path()
+            path = os.environ["PATH"]
+            assert "/usr/local/bin" in path
+            assert "/opt/homebrew/bin" in path
+            assert "/Users/testuser/.local/bin" in path
+            assert "/Users/testuser/.cargo/bin" in path
+
+    def test_does_not_duplicate_existing_dirs(self, platform):
+        with patch.dict(os.environ, {"HOME": "/Users/testuser", "PATH": "/usr/local/bin:/usr/bin"}, clear=True):
+            platform._refresh_path()
+            path = os.environ["PATH"]
+            assert path.count("/usr/local/bin") == 1
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +324,16 @@ class TestAddToPath:
     def test_adds_to_bashrc_for_bash(self, platform):
         m = mock_open(read_data="# bash config\n")
         with patch("builtins.open", m), patch("os.environ", {"SHELL": "/bin/bash"}), patch(
+            "pathlib.Path.home", return_value=Path("/Users/user")
+        ):
+            result = platform.add_to_path(Path("/opt/mybin"))
+
+        assert result is True
+
+    def test_creates_rc_file_if_missing(self, platform):
+        m = mock_open()
+        m.side_effect = [FileNotFoundError("No such file"), mock_open()()]
+        with patch("builtins.open", m), patch("os.environ", {"SHELL": "/bin/zsh"}), patch(
             "pathlib.Path.home", return_value=Path("/Users/user")
         ):
             result = platform.add_to_path(Path("/opt/mybin"))

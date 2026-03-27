@@ -231,6 +231,16 @@ class TestAddToPath:
 
         assert result is True
 
+    def test_creates_rc_file_if_missing(self, platform):
+        m = mock_open()
+        m.side_effect = [FileNotFoundError("No such file"), mock_open()()]
+        with patch("builtins.open", m), patch("os.environ", {"SHELL": "/bin/bash"}), patch(
+            "pathlib.Path.home", return_value=Path("/home/user")
+        ):
+            result = platform.add_to_path(Path("/opt/mybin"))
+
+        assert result is True
+
 
 # ---------------------------------------------------------------------------
 # request_elevation
