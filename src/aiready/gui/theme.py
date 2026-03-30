@@ -1,5 +1,7 @@
 """Theme constants for AIReady GUI."""
 
+import sys
+
 # Window
 WINDOW_WIDTH = 500
 WINDOW_HEIGHT = 520
@@ -8,13 +10,22 @@ PADDING_SM = 14
 BUTTON_HEIGHT = 42
 CARD_HEIGHT = 90
 
+# Platform-aware font families
+if sys.platform == "darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _FONT_CODE_FAMILY = "Menlo"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _FONT_CODE_FAMILY = "Consolas"
+
 # Fonts
-FONT_HERO = ("Segoe UI", 36, "bold")
-FONT_TITLE = ("Segoe UI", 20, "bold")
-FONT_SUBTITLE = ("Segoe UI", 14)
-FONT_BODY = ("Segoe UI", 13)
-FONT_SMALL = ("Segoe UI", 11)
-FONT_CODE = ("Consolas", 14, "bold")
+FONT_HERO = (_FONT_FAMILY, 36, "bold")
+FONT_TITLE = (_FONT_FAMILY, 20, "bold")
+FONT_SUBTITLE = (_FONT_FAMILY, 14)
+FONT_BODY = (_FONT_FAMILY, 13)
+FONT_SMALL = (_FONT_FAMILY, 11)
+FONT_CARD_TITLE = (_FONT_FAMILY, 15, "bold")
+FONT_CODE = (_FONT_CODE_FAMILY, 14, "bold")
 
 # Colors - accent
 COLOR_PRIMARY = "#6366f1"

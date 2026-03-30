@@ -26,7 +26,9 @@ source .venv/bin/activate 2>/dev/null || true
 case "$OS" in
     Darwin)
         echo "Building macOS GUI..."
+        AIREADY_VERSION="${VERSION#v}" \
         pyinstaller build/pyinstaller/macos-claude.spec --distpath "$RELEASE_DIR/gui" --workpath /tmp/aiready-build -y
+        AIREADY_VERSION="${VERSION#v}" \
         pyinstaller build/pyinstaller/macos-openclaw.spec --distpath "$RELEASE_DIR/gui" --workpath /tmp/aiready-build -y
         # Zip .app bundles
         cd "$RELEASE_DIR/gui"

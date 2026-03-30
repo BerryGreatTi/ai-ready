@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import customtkinter as ctk
 from aiready.gui.theme import (
-    FONT_TITLE, FONT_BODY, FONT_SMALL, PADDING, PADDING_SM, CARD_HEIGHT,
-    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_CARD_BG, COLOR_CARD_BORDER,
-    COLOR_CARD_SELECTED, COLOR_MUTED,
+    FONT_TITLE, FONT_BODY, FONT_SMALL, FONT_CARD_TITLE, PADDING, PADDING_SM,
+    CARD_HEIGHT, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_CARD_BG,
+    COLOR_CARD_BORDER, COLOR_CARD_SELECTED, COLOR_MUTED,
 )
 
 
@@ -63,7 +63,7 @@ class ToolSelectScreen(ctk.CTkFrame):
 
         ctk.CTkLabel(
             inner, text=self.app.i18n.get(f"tool.{tool_id}.name"),
-            font=("Segoe UI", 15, "bold"), anchor="w",
+            font=FONT_CARD_TITLE, anchor="w",
         ).pack(anchor="w")
 
         ctk.CTkLabel(

@@ -12,6 +12,17 @@ git push origin v0.1.0-rcN
 GitHub Actions builds Windows .exe and macOS .app automatically. Release appears at:
 `https://github.com/BerryGreatTi/ai-ready/releases/tag/v0.1.0-rcN`
 
+#### Local macOS build
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]" && pip install pyinstaller customtkinter
+.dev/scripts/build-all.sh v0.1.0-rcN
+```
+
+The build script sets `AIREADY_VERSION` so the `.app` bundle's `Info.plist` contains the correct `CFBundleShortVersionString`. See [ADR-0011](../decisions/ADR-0011-pyinstaller-onedir-macos.md) for the onedir build mode.
+
 ### 2. Automated tests (CI)
 
 Verified automatically on every push:

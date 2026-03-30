@@ -6,6 +6,7 @@ block_cipher = None
 ROOT = Path(os.path.abspath(SPECPATH)).parent.parent
 SRC = ROOT / "src"
 I18N_DIR = SRC / "aiready" / "i18n"
+VERSION = os.environ.get("AIREADY_VERSION", "0.0.0")
 
 a = Analysis(
     [str(ROOT / "build" / "entry_claude_code.py")],
@@ -26,8 +27,6 @@ pyz = PYZ(a.pure, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
     name="AIReady-ClaudeCode-Mac",
     debug=False,
@@ -36,12 +35,22 @@ exe = EXE(
     upx=False,
     console=False,
     icon=None,
+    exclude_binaries=True,
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    name="AIReady-ClaudeCode-Mac",
 )
 app = BUNDLE(
-    exe,
+    coll,
     name="AIReady-ClaudeCode-Mac.app",
     icon=None,
     bundle_identifier="com.aiready.claudecode",
+    version=VERSION,
     info_plist={
         "NSHighResolutionCapable": True,
         "NSRequiresAquaSystemAppearance": False,
